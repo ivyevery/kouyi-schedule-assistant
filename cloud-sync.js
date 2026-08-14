@@ -126,6 +126,32 @@
     const meta = readMeta(userId, scope);
 
     if (!meta) {
+      const localCount = normalizedLocal.records.length;
+      const remoteCount = normalizedRemote.records.length;
+
+      // A new browser/device has no sync metadata yet. An empty side is not a
+      // real conflict: bootstrap it from the side that already has records.
+      if (localCount === 0 && remoteCount > 0) {
+        backupLocal(localState);
+        replaceLocal(normalizedRemote);
+        const downloadedMeta = writeMeta(userId, scope, remote.revision, remoteFingerprint);
+        return { status: "downloaded", revision: remote.revision, updatedAt: remote.updated_at, meta: downloadedMeta };
+      }
+
+      if (localCount > 0 && remoteCount === 0) {
+        const { data: updated, error: updateError } = await client
+          .from("app_state")
+          .update({ payload: normalizedLocal })
+          .eq("user_id", userId)
+          .eq("revision", remote.revision)
+          .select("revision, updated_at")
+          .maybeSingle();
+        if (updateError) throw updateError;
+        if (!updated) return { status: "conflict", revision: remote.revision, updatedAt: remote.updated_at };
+        const uploadedMeta = writeMeta(userId, scope, updated.revision, localFingerprint);
+        return { status: "uploaded", revision: updated.revision, updatedAt: updated.updated_at, meta: uploadedMeta };
+      }
+
       if (localFingerprint !== remoteFingerprint) {
         return { status: "conflict", revision: remote.revision, updatedAt: remote.updated_at };
       }

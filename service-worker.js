@@ -1,4 +1,4 @@
-const CACHE_NAME = "interpreter-assistant-v1";
+const CACHE_NAME = "interpreter-assistant-v2";
 const APP_SHELL = [
   "./",
   "./mobile-schedule.html",
