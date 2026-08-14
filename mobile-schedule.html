@@ -1,0 +1,2212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff5f2">
+  <title>口译日程 · 手机版</title>
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="icon" href="assets/pwa/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/pwa/icon-192.png">
+  <script src="pwa-register.js" defer></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f2;
+      --surface: #fbfcf9;
+      --surface-strong: #ffffff;
+      --ink: #19211c;
+      --muted: #68736b;
+      --line: #dbe1da;
+      --accent: #246347;
+      --accent-soft: #e3eee7;
+      --reserved: #a86022;
+      --confirmed: #2f6c50;
+      --completed: #748078;
+      --cancelled: #9b9f9b;
+      --danger: #9b3d35;
+      --radius: 16px;
+      --shadow: 0 16px 40px rgba(35, 58, 44, .10);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #111713;
+        --surface: #18201b;
+        --surface-strong: #202a23;
+        --ink: #eef3ef;
+        --muted: #a9b5ac;
+        --line: #344039;
+        --accent: #78b994;
+        --accent-soft: #233b2e;
+        --reserved: #e2a46c;
+        --confirmed: #78b994;
+        --completed: #a2ada5;
+        --cancelled: #858d87;
+        --danger: #e0958e;
+        --shadow: 0 16px 40px rgba(0, 0, 0, .28);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--ink);
+      -webkit-tap-highlight-color: transparent;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+    .hidden { display: none !important; }
+
+    .app {
+      width: min(100%, 560px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: env(safe-area-inset-top) 16px calc(96px + env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand { min-width: 0; }
+    .brand h1 { margin: 0; font-size: 21px; letter-spacing: -.02em; }
+    .save-state {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .today-btn, .month-button, .text-button, .icon-button, .primary-button, .secondary-button {
+      border: 0;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, opacity 120ms ease;
+    }
+    button:active { transform: scale(.97); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent) 36%, transparent);
+      outline-offset: 2px;
+    }
+    .today-btn {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 0 15px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .view { display: grid; gap: 18px; }
+    .week-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 2px 1px 4px;
+      scroll-snap-type: x proximity;
+      overscroll-behavior-inline: contain;
+      scrollbar-width: none;
+    }
+    .week-strip::-webkit-scrollbar { display: none; }
+    .week-wheel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .week-wheel-title { color: var(--muted); font-size: 12px; }
+    .week-wheel-actions { display: flex; gap: 4px; }
+    .week-shift {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .week-day {
+      flex: 0 0 calc((100% - 36px) / 7);
+      min-width: 46px;
+      min-height: 72px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--surface);
+      cursor: pointer;
+      scroll-snap-align: start;
+    }
+    .week-day.today { border-color: var(--accent); background: var(--accent-soft); }
+    .week-day.selected { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .week-name { color: var(--muted); font-size: 11px; }
+    .week-number { font-size: 18px; font-weight: 760; line-height: 1; }
+    .dot-row { min-height: 6px; display: flex; justify-content: center; gap: 3px; }
+    .event-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    .event-dot.confirmed { background: var(--reserved); }
+    .event-dot.completed { background: var(--completed); }
+
+    .selected-day-panel {
+      display: grid;
+      gap: 9px;
+      border-radius: var(--radius);
+      background: var(--accent-soft);
+      padding: 12px;
+    }
+    .selected-day-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .selected-day-head h2 { margin: 0; font-size: 15px; }
+    .selected-day-head span { color: var(--muted); font-size: 11px; }
+    .selected-day-list { display: grid; gap: 8px; }
+    .selected-day-list .meeting { background: var(--surface-strong); }
+
+    .section-label { margin: 0; font-size: 16px; }
+    .upcoming-list { display: grid; gap: 9px; }
+    .paper-note {
+      position: relative;
+      min-height: 72px;
+      display: grid;
+      grid-template-columns: 50px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 11px 13px;
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .paper-note::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--confirmed);
+    }
+    .paper-note.status-reserved::before { background: var(--reserved); }
+    .paper-note.status-completed::before { background: var(--completed); }
+    .paper-note.empty-note { cursor: default; opacity: .54; }
+    .paper-note.empty-note::before { background: var(--line); }
+    .note-date { color: var(--accent); font-size: 12px; font-weight: 760; text-align: center; line-height: 1.25; }
+    .note-date strong { display: block; color: var(--ink); font-size: 21px; }
+    .note-main { min-width: 0; }
+    .note-title { display: block; font-size: 14px; font-weight: 760; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .note-meta { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .note-status { color: var(--muted); font-size: 11px; }
+    .calendar-section { background: var(--surface); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+    .calendar-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin-bottom: 10px; }
+    .month-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: transparent;
+      font-size: 25px;
+      line-height: 1;
+    }
+    .month-button:hover { background: var(--accent-soft); }
+    .month-title { text-align: center; font-size: 16px; font-weight: 750; }
+    .calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .weekday { padding: 3px 0 7px; text-align: center; color: var(--muted); font-size: 11px; }
+    .day {
+      position: relative;
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      min-width: 0;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      cursor: pointer;
+    }
+    .day-number { font-size: 13px; line-height: 1; }
+    .day.outside { color: color-mix(in srgb, var(--muted) 48%, transparent); }
+    .day-dots { position: absolute; bottom: 4px; display: flex; gap: 2px; }
+    .day-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+    .day-dot.confirmed { background: var(--reserved); }
+    .day-dot.completed { background: var(--completed); }
+    .day.today { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent); font-weight: 800; }
+    .day.selected { background: var(--accent); color: #f7fbf8; }
+    .day.selected .day-dot { box-shadow: 0 0 0 1px color-mix(in srgb, #f7fbf8 88%, transparent); }
+
+    .agenda-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+    .agenda-date { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+    .agenda-count { color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .agenda-list { display: grid; gap: 10px; }
+    .meeting {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--confirmed);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 12px 13px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .meeting.status-reserved { border-left-color: var(--reserved); }
+    .meeting.status-completed { border-left-color: var(--completed); opacity: .78; }
+    .meeting.status-cancelled { border-left-color: var(--cancelled); opacity: .58; }
+    .meeting-top { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+    .meeting-title { font-size: 14px; font-weight: 760; line-height: 1.35; overflow-wrap: anywhere; }
+    .status-text { color: var(--accent); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .status-reserved .status-text { color: var(--reserved); }
+    .status-completed .status-text { color: var(--completed); }
+    .status-cancelled .status-text { color: var(--cancelled); }
+    .meeting-meta { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .empty {
+      min-height: 138px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 8px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+    }
+    .empty strong { color: var(--ink); font-size: 15px; }
+
+    .list-tools { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+    .list-tools::-webkit-scrollbar { display: none; }
+    .filter-button {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .filter-button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+
+    .data-panel { display: grid; gap: 14px; }
+    .data-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 16px; }
+    .data-card h2 { margin: 0 0 7px; font-size: 17px; }
+    .data-card p { margin: 0 0 15px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 9px; }
+    .cloud-login-fields { display: grid; gap: 10px; }
+    .cloud-login-fields label { display: grid; gap: 6px; color: var(--ink); }
+    .cloud-login-fields input {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface-strong);
+      color: var(--ink);
+      padding: 0 13px;
+    }
+    .primary-button, .secondary-button {
+      min-height: 44px;
+      border-radius: 12px;
+      padding: 0 16px;
+      font-weight: 750;
+    }
+    .primary-button { background: var(--accent); color: #f7fbf8; }
+    .secondary-button { border: 1px solid var(--line); background: var(--surface-strong); }
+    .danger-button { color: var(--danger); }
+
+    .bottom-nav {
+      position: fixed;
+      z-index: 10;
+      left: 50%;
+      bottom: max(10px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(calc(100% - 24px), 536px);
+      height: 64px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+    .nav-button, .nav-add {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 4px;
+      min-width: 0;
+    }
+    .nav-button.active { color: var(--accent); background: var(--accent-soft); }
+    .nav-add {
+      width: auto;
+      height: auto;
+      border-radius: 0;
+      color: var(--muted);
+      box-shadow: none;
+    }
+    .nav-icon {
+      width: 22px;
+      height: 22px;
+      display: block;
+      background-color: currentColor;
+      -webkit-mask: center / contain no-repeat;
+      mask: center / contain no-repeat;
+    }
+    .icon-home { -webkit-mask-image: url("assets/mobile-icons/home.png"); mask-image: url("assets/mobile-icons/home.png"); }
+    .icon-calendar { -webkit-mask-image: url("assets/mobile-icons/calendar.png"); mask-image: url("assets/mobile-icons/calendar.png"); }
+    .icon-add { -webkit-mask-image: url("assets/mobile-icons/add.png"); mask-image: url("assets/mobile-icons/add.png"); }
+    .icon-setting { -webkit-mask-image: url("assets/mobile-icons/setting.png"); mask-image: url("assets/mobile-icons/setting.png"); }
+    .nav-label { line-height: 1; }
+    .dot-legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 4px; }
+    .legend-item .event-dot { flex: 0 0 auto; }
+    }
+
+    .sheet-wrap {
+      position: fixed;
+      z-index: 20;
+      inset: 0;
+      display: grid;
+      align-items: end;
+      background: rgba(7, 14, 9, .42);
+      padding-top: 44px;
+    }
+    .sheet {
+      width: min(100%, 560px);
+      max-height: calc(100dvh - 44px);
+      margin: 0 auto;
+      overflow: auto;
+      border-radius: 22px 22px 0 0;
+      background: var(--surface-strong);
+      padding: 10px 18px calc(22px + env(safe-area-inset-bottom));
+      box-shadow: 0 -20px 60px rgba(0, 0, 0, .22);
+    }
+    .grabber { width: 38px; height: 5px; margin: 0 auto 10px; border-radius: 5px; background: var(--line); }
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .sheet-head h2 { margin: 0; font-size: 20px; }
+    .text-button { min-height: 40px; padding: 0 8px; background: transparent; color: var(--accent); font-weight: 700; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 10px; }
+    label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 650; }
+    label.wide { grid-column: 1 / -1; }
+    input, select, textarea {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--ink);
+      padding: 10px 12px;
+    }
+    textarea { min-height: 82px; resize: vertical; }
+    .form-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 4px; }
+    .delete-button { min-width: 76px; }
+
+    .toast {
+      position: fixed;
+      z-index: 30;
+      left: 50%;
+      bottom: calc(90px + env(safe-area-inset-bottom));
+      transform: translate(-50%, 12px);
+      width: max-content;
+      max-width: calc(100% - 36px);
+      border-radius: 12px;
+      background: var(--ink);
+      color: var(--bg);
+      padding: 10px 14px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (min-width: 700px) {
+      .app { padding-left: 20px; padding-right: 20px; }
+      .calendar-section { padding: 18px; }
+    }
+    @media (max-width: 370px) {
+      .app { padding-left: 12px; padding-right: 12px; }
+      .calendar-section { padding: 11px; }
+      .day { border-radius: 9px; }
+      .form-grid { grid-template-columns: 1fr; }
+      label.wide, .form-actions { grid-column: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .bottom-nav { background: var(--surface-strong); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    }
+
+    /* 小日常 UI 视觉语言 V1.0 */
+    :root {
+      color-scheme: light;
+      --bg: #fff5f2;
+      --surface: #fffaf7;
+      --surface-strong: #fffdfb;
+      --ink: #3f3734;
+      --muted: #847773;
+      --line: #eaded9;
+      --accent: #f2762e;
+      --accent-script: #d95b2b;
+      --accent-soft: #fff0e7;
+      --reserved: #f5b14d;
+      --reserved-soft: #faead6;
+      --confirmed: #8fc9e9;
+      --confirmed-soft: #e4f2f8;
+      --completed: #8dbb91;
+      --completed-soft: #e7f0e5;
+      --personal: #b184c7;
+      --personal-soft: #f5efff;
+      --personal-ink: #704d7d;
+      --cancelled: #aaa19e;
+      --danger: #b64c43;
+      --radius: 18px;
+      --shadow: 0 14px 34px rgba(122, 75, 52, .08);
+      --font-display: "Source Han Serif SC", "Noto Serif CJK SC", "思源宋体", "Songti SC", "STSong", serif;
+      --font-ui: "Source Han Sans SC", "Noto Sans CJK SC", "思源黑体", "PingFang SC", system-ui, sans-serif;
+      font-family: var(--font-ui);
+    }
+
+    html, body { background: var(--bg); }
+    body { color: var(--ink); }
+    .app {
+      width: min(100%, 520px);
+      padding: env(safe-area-inset-top) 18px calc(104px + env(safe-area-inset-bottom));
+    }
+    .topbar {
+      height: auto;
+      min-height: 84px;
+      padding: 12px 2px 10px;
+      align-items: flex-start;
+    }
+    .brand { position: relative; }
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: 25px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .save-state {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .home-art {
+      position: relative;
+      flex: 0 0 86px;
+      width: 86px;
+      height: 74px;
+      margin-top: -5px;
+    }
+    .home-art img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .home-art .sun {
+      position: absolute;
+      top: 3px;
+      right: 2px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f7ca64;
+    }
+    .home-art .sun::before {
+      content: "•  •";
+      position: absolute;
+      inset: 8px 0 auto;
+      color: #5f513d;
+      font-size: 8px;
+      text-align: center;
+      letter-spacing: 3px;
+    }
+    .home-art .sun::after {
+      content: "";
+      position: absolute;
+      left: 15px;
+      top: 24px;
+      width: 11px;
+      height: 5px;
+      border-bottom: 2px solid #5f513d;
+      border-radius: 0 0 10px 10px;
+    }
+    .home-art .mini-calendar {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 48px;
+      height: 43px;
+      border-radius: 13px;
+      background: #fff1e9;
+      box-shadow: inset 0 11px 0 #ff9875;
+      transform: rotate(4deg);
+    }
+    .home-art .mini-calendar::before {
+      content: "";
+      position: absolute;
+      inset: 17px 8px 8px;
+      border-radius: 7px;
+      background:
+        radial-gradient(circle, #f2b29b 0 2px, transparent 2.5px) 0 0 / 11px 10px;
+    }
+    .today-btn {
+      min-height: 34px;
+      padding: 0;
+      background: transparent;
+      color: var(--accent);
+      font-size: 12px;
+    }
+    .view { gap: 15px; }
+
+    .week-wheel-head { margin-top: 2px; }
+    .week-wheel-title { font-size: 11px; color: var(--muted); }
+    .week-wheel-actions { gap: 8px; }
+    .week-shift {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 50%;
+      background: #fde8d9;
+      color: var(--accent);
+      font-size: 19px;
+    }
+
+    body[data-view="homeView"] .topbar {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 104px;
+      gap: 10px;
+      padding-top: 18px;
+      overflow: visible;
+    }
+    body[data-view="homeView"] .brand { display: contents; }
+    body[data-view="homeView"] .brand h1 {
+      grid-column: 1;
+      grid-row: 1;
+      position: relative;
+      width: max-content;
+      padding: 0 0 4px 1px;
+      font-family: "Snell Roundhand", "Brush Script MT", "Segoe Script", "Bradley Hand", cursive;
+      color: var(--accent-script);
+      font-size: 35px;
+      font-weight: 600;
+      line-height: 1.18;
+      letter-spacing: .01em;
+    }
+    body[data-view="homeView"] .save-state {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: center;
+      position: relative;
+      z-index: 2;
+      margin: 5px 0 0 78px;
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-size: 29px;
+      font-weight: 700;
+      letter-spacing: -.025em;
+    }
+    body[data-view="homeView"] .home-art {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: center;
+      justify-self: start;
+      z-index: 1;
+      width: 132px;
+      height: 112px;
+      margin: 2px 0 0 -24px;
+      opacity: .94;
+      pointer-events: none;
+    }
+    body[data-view="homeView"] .week-wheel-head {
+      justify-content: flex-end;
+      margin-top: -54px;
+      margin-bottom: 29px;
+    }
+    body[data-view="homeView"] .week-wheel-title { display: none; }
+    body[data-view="homeView"] .week-wheel-actions {
+      gap: 0;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #fbd7c7;
+    }
+    body[data-view="homeView"] .week-shift {
+      width: 48px;
+      height: 38px;
+      border-radius: 0;
+      background: transparent;
+      color: #5d5c5b;
+      font-size: 0;
+    }
+    body[data-view="homeView"] .week-shift::before {
+      content: "";
+      display: block;
+      width: 9px;
+      height: 9px;
+      margin: auto;
+      border-top: 1.8px solid currentColor;
+      border-right: 1.8px solid currentColor;
+    }
+    body[data-view="homeView"] #weekPrevBtn::before { transform: rotate(-135deg); }
+    body[data-view="homeView"] #weekNextBtn::before { transform: rotate(45deg); }
+    body[data-view="homeView"] .week-shift + .week-shift {
+      border-left: 1px solid rgba(255, 255, 255, .75);
+    }
+    body[data-view="calendarView"] .topbar {
+      min-height: 62px;
+      align-items: center;
+      padding-top: 12px;
+    }
+    body[data-view="calendarView"] .brand h1 {
+      position: relative;
+      padding-left: 28px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+    }
+    body[data-view="calendarView"] .brand h1::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      border-radius: 0;
+      background: var(--accent);
+      -webkit-mask: url("assets/mobile-icons/calendar-view-source.png") center / contain no-repeat;
+      mask: url("assets/mobile-icons/calendar-view-source.png") center / contain no-repeat;
+      transform: translateY(-50%);
+    }
+    body[data-view="calendarView"] .save-state { display: none; }
+    .week-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      overflow: visible;
+      padding: 3px 0 5px;
+    }
+    .week-day {
+      min-width: 0;
+      min-height: 94px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      gap: 8px;
+    }
+    .week-day.today { border: 0; background: transparent; }
+    .week-day.selected { border: 0; box-shadow: none; }
+    .week-name {
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .week-number {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      font-family: var(--font-display);
+      font-size: 23px;
+      font-weight: 700;
+    }
+    .week-day.today .week-number,
+    .week-day.selected .week-number {
+      background: var(--accent);
+      color: #fffaf7;
+    }
+    .dot-row { min-height: 7px; gap: 3px; }
+    .event-dot { width: 6px; height: 6px; }
+    .event-dot.reserved { background: var(--reserved); }
+    .event-dot.confirmed { background: var(--confirmed); }
+    .event-dot.completed { background: var(--completed); }
+
+    #homeView { position: relative; }
+    .selected-day-panel {
+      position: absolute;
+      z-index: 8;
+      left: 6px;
+      right: 6px;
+      max-height: 230px;
+      overflow: auto;
+      border-radius: var(--radius);
+      border: 1px solid rgba(234, 222, 217, .82);
+      background: rgba(255, 253, 251, .97);
+      padding: 13px 14px;
+      box-shadow: 0 18px 42px rgba(122, 75, 52, .16);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .selected-day-head h2,
+    .section-label,
+    .agenda-date,
+    .form-section-head h2,
+    .settings-hero h2,
+    .add-hero h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+    }
+    .section-label {
+      margin-top: 5px;
+      padding-bottom: 4px;
+      color: var(--accent-script);
+      font-family: "Snell Roundhand", "Brush Script MT", "Segoe Script", "Bradley Hand", cursive;
+      font-size: 35px;
+      font-weight: 600;
+      line-height: 1.18;
+      letter-spacing: .01em;
+    }
+    .section-label::after {
+      display: none;
+    }
+    .upcoming-list { gap: 10px; }
+    .paper-note {
+      min-height: 92px;
+      grid-template-columns: 66px 1fr 12px;
+      gap: 12px;
+      border: 0;
+      border-radius: 20px;
+      background: var(--confirmed-soft);
+      padding: 13px 16px;
+      box-shadow: none;
+    }
+    .paper-note.status-reserved { background: var(--reserved-soft); }
+    .paper-note.status-confirmed { background: var(--confirmed-soft); }
+    .paper-note::before { display: none; }
+    .paper-note::after {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--confirmed);
+    }
+    .paper-note.status-reserved::after { background: var(--reserved); }
+    .paper-note.empty-note { display: none; }
+    .note-date {
+      color: var(--muted);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .note-date strong {
+      color: var(--ink);
+      font-size: 36px;
+      line-height: 1.05;
+    }
+    .note-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      white-space: normal;
+      line-height: 1.45;
+    }
+    .note-meta, .note-status { display: none; }
+
+    .calendar-section {
+      border-radius: 22px;
+      background: rgba(255, 253, 251, .62);
+      padding: 12px 13px 13px;
+      box-shadow: none;
+    }
+    .calendar-head { margin-bottom: 7px; }
+    .month-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #fde8d9;
+      color: var(--accent);
+      font-size: 21px;
+    }
+    .month-title {
+      font-family: var(--font-display);
+      font-size: 25px;
+      font-weight: 700;
+    }
+    .calendar { gap: 3px 4px; }
+    .weekday {
+      padding-bottom: 7px;
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-size: 13px;
+    }
+    .day {
+      width: 36px;
+      height: 36px;
+      aspect-ratio: 1;
+      max-width: 39px;
+      justify-self: center;
+      border: 1px solid #e1d8d4;
+      border-radius: 50%;
+      background: #fffdfb;
+    }
+    .day.has-reserved { border-color: var(--reserved); background: var(--reserved); }
+    .day.has-confirmed { border-color: var(--confirmed); background: var(--confirmed); }
+    .day.has-completed { border-color: var(--completed); background: var(--completed); }
+    .day.has-blocker::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -5px;
+      width: 18px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--personal);
+      transform: translateX(-50%);
+    }
+    .day.blocker-only { border-color: var(--personal); background: var(--personal); }
+    .day.blocker-only::after { display: none; }
+    .day-number { color: var(--ink); font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+    .day.outside { opacity: .22; }
+    .day.today, .day.selected {
+      border-color: var(--accent);
+      background: #fffdfb;
+      color: var(--ink);
+      font-weight: 800;
+      box-shadow: inset 0 0 0 3px var(--accent);
+    }
+    .day.today.has-reserved, .day.selected.has-reserved { background: var(--reserved); }
+    .day.today.has-confirmed, .day.selected.has-confirmed { background: var(--confirmed); }
+    .day.today.has-completed, .day.selected.has-completed { background: var(--completed); }
+    .day.today.blocker-only, .day.selected.blocker-only { background: var(--personal); }
+    .day-dots, .dot-legend { display: none; }
+
+    .calendar-utility {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 1px 8px;
+    }
+    .blocker-trigger {
+      min-height: 32px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--personal-soft);
+      color: var(--personal-ink);
+      padding: 0 12px;
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .blocker-mark {
+      width: 14px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--personal);
+    }
+
+    .agenda-head { margin-top: 2px; }
+    .agenda-date { font-size: 20px; }
+    .agenda-count { font-size: 11px; }
+    .list-tools { gap: 7px; }
+    .filter-button {
+      min-height: 33px;
+      padding: 0 14px;
+      border-color: transparent;
+      background: rgba(255, 253, 251, .72);
+      font-size: 12px;
+    }
+    .filter-button.active { border-color: transparent; background: var(--accent); color: #fffaf7; }
+    .agenda-list { gap: 0; }
+    .meeting {
+      position: relative;
+      display: block;
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      padding: 12px 3px 13px 36px;
+    }
+    .meeting::before {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 29px;
+      width: 22px;
+      height: 22px;
+      background: var(--confirmed);
+      -webkit-mask: url("assets/mobile-icons/microphone-source.png") center / contain no-repeat;
+      mask: url("assets/mobile-icons/microphone-source.png") center / contain no-repeat;
+    }
+    .meeting::after {
+      display: none;
+    }
+    .meeting.status-reserved::before { background: var(--reserved); }
+    .meeting.status-reserved::after { border-color: var(--reserved); }
+    .meeting.status-completed::before { background: var(--completed); }
+    .meeting.status-completed::after { border-color: var(--completed); }
+    .meeting.status-cancelled::before { background: var(--cancelled); }
+    .meeting.status-cancelled::after { border-color: var(--cancelled); }
+    .meeting-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 5px;
+    }
+    .meeting-date {
+      display: block;
+      color: var(--muted);
+      font-family: var(--font-display);
+      font-size: 13px;
+    }
+    .meeting-title {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .status-text { display: none; }
+    .meeting-meta {
+      margin: 0;
+      color: var(--accent);
+      font-family: var(--font-display);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .meeting.blocker-item::before {
+      width: 20px;
+      height: 4px;
+      top: 34px;
+      border-radius: 999px;
+      background: var(--personal);
+      -webkit-mask: none;
+      mask: none;
+    }
+    .meeting.blocker-item .meeting-meta { color: var(--personal-ink); }
+
+    .blocker-overlay {
+      position: fixed;
+      z-index: 24;
+      inset: 0;
+      display: grid;
+      align-items: end;
+      background: rgba(63, 55, 52, .26);
+      padding: 24px 12px max(12px, env(safe-area-inset-bottom));
+    }
+    .blocker-sheet {
+      width: min(100%, 500px);
+      margin: 0 auto;
+      border-radius: 24px;
+      background: var(--surface-strong);
+      padding: 18px;
+      box-shadow: 0 24px 60px rgba(83, 52, 72, .2);
+    }
+    .blocker-sheet-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 15px;
+    }
+    .blocker-sheet-head h2 {
+      margin: 0 0 4px;
+      color: var(--personal-ink);
+      font-family: var(--font-display);
+      font-size: 23px;
+    }
+    .blocker-sheet-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .blocker-close {
+      min-height: 36px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 0 4px;
+      cursor: pointer;
+    }
+    .blocker-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 10px; }
+    .blocker-fields .wide { grid-column: 1 / -1; }
+    .blocker-actions {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .blocker-save {
+      min-height: 46px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--personal-ink);
+      color: #fffafc;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .blocker-delete.hidden + .blocker-save { grid-column: 1 / -1; }
+    .blocker-delete {
+      min-height: 46px;
+      border: 1px solid #eadde9;
+      border-radius: 14px;
+      background: var(--personal-soft);
+      color: var(--personal-ink);
+      padding: 0 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .add-page { padding-bottom: 16px; }
+    .add-hero, .settings-hero {
+      position: relative;
+      min-height: 142px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      overflow: visible;
+    }
+    .add-hero-copy { position: relative; z-index: 2; max-width: 58%; padding-top: 14px; }
+    .page-kicker { color: var(--accent); font-size: 11px; font-weight: 700; }
+    .add-hero h2, .settings-hero h2 { margin: 5px 0 6px; font-size: 27px; }
+    .add-hero p, .settings-hero p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .add-illustration {
+      position: absolute;
+      z-index: 1;
+      right: -24px;
+      top: -16px;
+      width: 205px;
+      height: 164px;
+      object-fit: contain;
+    }
+    .quick-entry {
+      position: relative;
+      z-index: 3;
+      margin-top: -26px;
+      border-radius: 22px;
+      background: rgba(255, 253, 251, .94);
+      padding: 15px;
+      box-shadow: var(--shadow);
+    }
+    .quick-entry-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+    .quick-entry-head h3 { margin: 0; font-family: var(--font-display); font-size: 17px; }
+    .quick-entry-head span { color: var(--muted); font-size: 10px; }
+    .quick-entry textarea {
+      min-height: 92px;
+      border: 0;
+      border-radius: 15px;
+      background: #fff6f0;
+    }
+    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+    .voice-button { color: #4b91b9; background: var(--confirmed-soft); border-color: transparent; }
+    .form-section-head { display: flex; align-items: end; justify-content: space-between; margin-top: 6px; }
+    .form-section-head h2 { margin: 4px 0 0; font-size: 21px; }
+    .recognition-state { color: var(--completed); font-size: 10px; font-weight: 700; }
+    .form-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 10px;
+      border-radius: 22px;
+      background: rgba(255, 253, 251, .62);
+      padding: 15px;
+    }
+    label { color: #716662; font-size: 11px; }
+    input, select, textarea {
+      border-color: #e8dcd7;
+      border-radius: 13px;
+      background: #fffdfb;
+      color: var(--ink);
+    }
+    .form-actions { position: static; margin-top: 6px; }
+    .primary-button, .secondary-button { border-radius: 13px; }
+    .primary-button { background: var(--accent); color: #fffaf7; }
+    .text-button { color: var(--accent); }
+
+    .settings-hero {
+      min-height: 152px;
+      align-items: center;
+      padding: 10px 5px 12px;
+    }
+    #settingsView,
+    #settingsView h2,
+    #settingsView p,
+    #settingsView span,
+    #settingsView label {
+      font-family: var(--font-display);
+    }
+    .settings-hero > div { max-width: 50%; }
+    .settings-hero img { width: 190px; height: 142px; object-fit: contain; margin: -8px -8px -6px 0; }
+    .data-panel { gap: 11px; }
+    .data-card {
+      border: 0;
+      border-radius: 20px;
+      background: rgba(255, 253, 251, .78);
+      padding: 15px;
+      box-shadow: none;
+    }
+    .data-card h2 { font-family: var(--font-display); font-size: 20px; }
+    .data-card p { margin-bottom: 14px; font-size: 14px; line-height: 1.65; }
+    #settingsView button {
+      font-family: var(--font-ui);
+      font-size: 14px;
+    }
+    .theme-choice {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 13px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 0 13px;
+      font-weight: 700;
+    }
+    .theme-choice span { width: 17px; height: 17px; border-radius: 50%; background: var(--accent); }
+
+    .bottom-nav {
+      height: 66px;
+      border: 0;
+      border-radius: 22px;
+      background: rgba(255, 250, 247, .94);
+      box-shadow: 0 14px 35px rgba(122, 75, 52, .16);
+    }
+    .nav-button.active, .nav-add.active { color: var(--accent); background: var(--accent-soft); }
+    .nav-button, .nav-add { font-size: 11px; }
+    .nav-icon { width: 21px; height: 21px; }
+    .bottom-nav.hidden-for-form { display: grid; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 370px) {
+      .app { padding-left: 14px; padding-right: 14px; }
+      .week-strip { gap: 2px; }
+      .week-number { width: 39px; height: 39px; font-size: 21px; }
+      body[data-view="homeView"] .save-state { margin-left: 70px; font-size: 27px; }
+      body[data-view="homeView"] .home-art { width: 122px; height: 104px; }
+      .add-illustration { right: -36px; width: 185px; }
+      .settings-hero img { width: 155px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1 id="pageTitle">口译日历</h1>
+        <p class="save-state" id="pageSubtitle"></p>
+      </div>
+      <div class="home-art" id="homeArt" aria-hidden="true">
+        <img src="assets/illustrations/home-calendar-sun.png" alt="">
+      </div>
+      <button class="today-btn hidden" id="todayBtn" type="button">回到今天</button>
+    </header>
+
+    <section class="view" id="homeView">
+      <div class="week-wheel-head">
+        <span class="week-wheel-title">向左右滑动查看更多日期</span>
+        <div class="week-wheel-actions">
+          <button class="week-shift" id="weekPrevBtn" type="button" aria-label="向前七天">‹</button>
+          <button class="week-shift" id="weekNextBtn" type="button" aria-label="向后七天">›</button>
+        </div>
+      </div>
+      <div class="week-strip" id="weekStrip" aria-label="近七天日程"></div>
+      <div class="selected-day-panel hidden" id="selectedDayPanel">
+        <div class="selected-day-head">
+          <h2 id="selectedDayTitle"></h2>
+          <span id="selectedDayCount"></span>
+        </div>
+        <div class="selected-day-list" id="selectedDayList"></div>
+      </div>
+      <h2 class="section-label">Upcoming...</h2>
+      <div class="upcoming-list" id="upcomingList"></div>
+    </section>
+
+    <section class="view hidden" id="calendarView">
+      <div class="calendar-section">
+        <div class="calendar-head">
+          <button class="month-button" id="prevMonthBtn" type="button" aria-label="上个月">‹</button>
+          <div class="month-title" id="monthTitle"></div>
+          <button class="month-button" id="nextMonthBtn" type="button" aria-label="下个月">›</button>
+        </div>
+        <div class="calendar-utility">
+          <button class="blocker-trigger" id="addBlockerBtn" type="button">＋ 标记占用</button>
+        </div>
+        <div class="calendar" id="calendar" aria-label="月历"></div>
+        <div class="dot-legend" aria-label="日程状态说明">
+          <span class="legend-item"><span class="event-dot confirmed"></span>确认</span>
+          <span class="legend-item"><span class="event-dot reserved"></span>预定</span>
+          <span class="legend-item"><span class="event-dot completed"></span>已完成</span>
+        </div>
+      </div>
+      <div class="agenda-head">
+        <h2 class="agenda-date">全部日程</h2>
+        <span class="agenda-count" id="allCount"></span>
+      </div>
+      <div class="list-tools" id="filterBar">
+        <button class="filter-button active" type="button" data-filter="all">全部</button>
+        <button class="filter-button" type="button" data-filter="reserved">预定</button>
+        <button class="filter-button" type="button" data-filter="confirmed">确认</button>
+        <button class="filter-button" type="button" data-filter="completed">完成</button>
+      </div>
+      <div class="agenda-list" id="allList"></div>
+    </section>
+
+    <section class="view add-page hidden" id="addView">
+      <div class="add-hero">
+        <div class="add-hero-copy">
+          <span class="page-kicker">新的工作邀约</span>
+          <h2 id="sheetTitle">新增日程</h2>
+          <p>说一说或粘贴邀约信息，我会先帮你整理。</p>
+        </div>
+        <img class="add-illustration" src="assets/illustrations/smart-entry.png" alt="">
+      </div>
+
+      <section class="quick-entry" aria-labelledby="quickEntryTitle">
+        <div class="quick-entry-head">
+          <h3 id="quickEntryTitle">快速录入</h3>
+          <span>文字或语音</span>
+        </div>
+        <label class="sr-only" for="quickInput">邀约信息</label>
+        <textarea id="quickInput" placeholder="例如：8月12日，上海医疗器械论坛，SI，线上全天，已确认"></textarea>
+        <div class="quick-actions">
+          <button class="secondary-button voice-button" id="voiceInputBtn" type="button">语音输入</button>
+          <button class="primary-button" id="parseQuickBtn" type="button">识别信息</button>
+        </div>
+      </section>
+
+      <div class="form-section-head">
+        <div>
+          <span class="recognition-state" id="recognitionState">等待识别</span>
+          <h2>确认日程信息</h2>
+        </div>
+        <button class="text-button" id="closeSheetBtn" type="button">取消</button>
+      </div>
+
+      <form class="form-grid" id="recordForm">
+        <input id="recordId" type="hidden">
+        <label class="wide">项目名称
+          <input id="projectName" autocomplete="off" required placeholder="会议或项目名称">
+        </label>
+        <label>开始日期
+          <input id="eventDate" type="date" required>
+        </label>
+        <label>结束日期
+          <input id="endDate" type="date">
+        </label>
+        <label>状态
+          <select id="status">
+            <option value="reserved">预定</option>
+            <option value="confirmed">确认</option>
+            <option value="completed">已完成</option>
+            <option value="cancelled">取消</option>
+          </select>
+        </label>
+        <label>时长
+          <select id="durationType">
+            <option>全天</option>
+            <option>半天</option>
+            <option>具体明细</option>
+          </select>
+        </label>
+        <label>口译类型
+          <select id="interpretingType">
+            <option value="">待补充</option>
+            <option value="SI">SI 同传</option>
+            <option value="CI">CI 交传</option>
+          </select>
+        </label>
+        <label>行业
+          <input id="industry" placeholder="例如 医药、汽车">
+        </label>
+        <label class="wide">具体时间
+          <input id="durationDetail" placeholder="如有明确时间再填写">
+        </label>
+        <label class="wide">地点或线上平台
+          <input id="location" placeholder="例如 上海、北京、Zoom">
+        </label>
+        <label class="wide">客户或对接人
+          <input id="clientName" placeholder="可稍后补充">
+        </label>
+        <label class="wide">备注
+          <textarea id="notes" placeholder="报价、差旅、准备重点等"></textarea>
+        </label>
+        <div class="form-actions">
+          <button class="primary-button" type="submit">保存日程</button>
+          <button class="secondary-button danger-button delete-button hidden" id="deleteBtn" type="button">删除</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="view hidden" id="settingsView">
+      <div class="settings-hero">
+        <div>
+          <h2>设置</h2>
+          <p>数据、同步与个性化</p>
+        </div>
+        <img src="assets/illustrations/settings-sync-decoration.png" alt="">
+      </div>
+      <div class="data-panel">
+        <article class="data-card">
+          <h2>同步</h2>
+          <p id="cloudAuthStatus">正在检查连接状态……</p>
+          <div class="cloud-login-fields" id="cloudLoginFields">
+            <label>登录邮箱
+              <input id="cloudEmail" type="email" autocomplete="username" placeholder="你的登录邮箱">
+            </label>
+            <label>登录密码
+              <input id="cloudPassword" type="password" autocomplete="current-password" placeholder="小日常账号密码">
+            </label>
+            <div class="button-row">
+              <button class="primary-button" id="cloudLoginBtn" type="button">登录云端</button>
+            </div>
+          </div>
+          <div class="button-row hidden" id="cloudSignedInActions">
+            <button class="primary-button" id="syncNowBtn" type="button">立即同步</button>
+            <button class="secondary-button" id="cloudLogoutBtn" type="button">退出登录</button>
+          </div>
+        </article>
+        <article class="data-card">
+          <h2>本机自动保存</h2>
+          <p id="localSummary">每次修改都会立即保存，并保留最近 30 份本机备份。</p>
+          <div class="button-row">
+            <button class="secondary-button" id="restoreBtn" type="button">恢复最近备份</button>
+          </div>
+        </article>
+        <article class="data-card">
+          <h2>数据文件</h2>
+          <p>现阶段可通过 JSON 数据文件在电脑和手机之间传递。</p>
+          <div class="button-row">
+            <button class="primary-button" id="exportBtn" type="button">导出数据</button>
+            <button class="secondary-button" id="importBtn" type="button">导入数据</button>
+            <input class="hidden" id="importFile" type="file" accept="application/json,.json">
+          </div>
+        </article>
+        <article class="data-card">
+          <h2>导出到微信</h2>
+          <p>预留会议清单样式、复制格式和分享范围设置。</p>
+          <div class="button-row">
+            <button class="secondary-button" type="button" disabled>即将加入</button>
+          </div>
+        </article>
+        <article class="data-card">
+          <h2>个性化</h2>
+          <p>当前使用深橙色主题与标准界面密度。</p>
+          <div class="button-row">
+            <button class="theme-choice" type="button" disabled><span></span>深橙色</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div class="blocker-overlay hidden" id="blockerOverlay" role="dialog" aria-modal="true" aria-labelledby="blockerTitleHeading">
+    <form class="blocker-sheet" id="blockerForm">
+      <div class="blocker-sheet-head">
+        <div>
+          <h2 id="blockerTitleHeading">标记占用</h2>
+          <p>这段时间不接受新的会议安排。</p>
+        </div>
+        <button class="blocker-close" id="closeBlockerBtn" type="button">取消</button>
+      </div>
+      <input id="blockerId" type="hidden">
+      <div class="blocker-fields">
+        <label class="wide">占用事项
+          <input id="blockerTitleInput" required placeholder="例如：私人安排、出行或不接工作">
+        </label>
+        <label>开始日期
+          <input id="blockerDate" type="date" required>
+        </label>
+        <label>结束日期
+          <input id="blockerEndDate" type="date">
+        </label>
+        <label class="wide">备注
+          <textarea id="blockerNotes" placeholder="可选"></textarea>
+        </label>
+      </div>
+      <div class="blocker-actions">
+        <button class="blocker-delete hidden" id="deleteBlockerBtn" type="button">取消占用</button>
+        <button class="blocker-save" type="submit">保存占用</button>
+      </div>
+    </form>
+  </div>
+
+  <nav class="bottom-nav" aria-label="主导航">
+    <button class="nav-button active" type="button" data-view="homeView"><span class="nav-icon icon-home"></span><span class="nav-label">主页</span></button>
+    <button class="nav-button" type="button" data-view="calendarView"><span class="nav-icon icon-calendar"></span><span class="nav-label">月历</span></button>
+    <button class="nav-add" id="addBtn" type="button" aria-label="添加新日程" data-view="addView"><span class="nav-icon icon-add"></span><span class="nav-label">新建</span></button>
+    <button class="nav-button" type="button" data-view="settingsView"><span class="nav-icon icon-setting"></span><span class="nav-label">设置</span></button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="cloud-sync.js"></script>
+  <script>
+    const STORAGE_KEY = "ivy-interpreter-schedule-v1";
+    const BACKUP_KEY = "ivy-interpreter-schedule-backups-v1";
+    const MAX_BACKUPS = 30;
+    const STATUS_LABELS = { reserved: "预定", confirmed: "确认", completed: "已完成", cancelled: "取消" };
+    const $ = id => document.getElementById(id);
+    let state = loadState();
+    let selectedDate = todayKey();
+    let viewDate = dateFromKey(selectedDate);
+    let currentFilter = "all";
+    let currentView = "homeView";
+    let homeSelectedDate = null;
+    let homePopoverPinned = false;
+    let weekOffset = 0;
+    let previousView = "homeView";
+    let speechRecognizer = null;
+    let calendarLongPressTimer = null;
+    let calendarLongPressTriggered = false;
+    let supabaseClient = null;
+    let cloudUser = null;
+    let cloudSyncStatus = "登录后点击“立即同步”检查状态。";
+
+    function defaultState() {
+      return { version: 1, records: [], settings: {}, industries: [], learnedContacts: [] };
+    }
+    function unwrap(input) {
+      if (!input) return {};
+      if (Array.isArray(input)) return { records: input };
+      if (typeof input.payload === "string") {
+        try { return unwrap(JSON.parse(input.payload)); } catch { return input; }
+      }
+      if (Array.isArray(input.backups) && input.backups[0]) return unwrap(input.backups[0]);
+      return input;
+    }
+    function normalizeRecord(record) {
+      return {
+        id: record.id || makeId(),
+        recordType: record.recordType || (record.isPersonal ? "blocker" : "meeting"),
+        projectName: record.projectName || "",
+        clientName: record.clientName || "",
+        industry: record.industry || "",
+        eventDate: record.eventDate || "",
+        endDate: record.endDate || "",
+        durationType: record.durationType || "全天",
+        durationDetail: record.durationDetail || "",
+        location: record.location || "",
+        interpretingType: record.interpretingType || "",
+        status: record.status || "reserved",
+        prepPath: record.prepPath || "",
+        notes: record.notes || "",
+        postNotes: record.postNotes || "",
+        meetingMinutes: record.meetingMinutes || "",
+        knowledgeText: record.knowledgeText || "",
+        hidden: Boolean(record.hidden),
+        includeInCv: Boolean(record.includeInCv),
+        updatedAt: record.updatedAt || new Date().toISOString()
+      };
+    }
+    function normalizeState(input) {
+      const source = unwrap(input);
+      const base = defaultState();
+      return {
+        version: 1,
+        records: (Array.isArray(source.records) ? source.records : []).map(normalizeRecord),
+        settings: { ...base.settings, ...(source.settings || {}) },
+        industries: Array.isArray(source.industries) ? source.industries : [],
+        learnedContacts: Array.isArray(source.learnedContacts) ? source.learnedContacts : []
+      };
+    }
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? normalizeState(JSON.parse(saved)) : loadBackup() || defaultState();
+      } catch { return loadBackup() || defaultState(); }
+    }
+    function persist(message = "已保存到本机") {
+      const savedAt = new Date().toISOString();
+      const payload = JSON.stringify({ ...state, savedAt });
+      localStorage.setItem(STORAGE_KEY, payload);
+      try {
+        const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]");
+        backups.unshift({ savedAt, payload });
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(backups.slice(0, MAX_BACKUPS)));
+      } catch {
+        localStorage.setItem(BACKUP_KEY, JSON.stringify([{ savedAt, payload }]));
+      }
+      renderHeader();
+    }
+    function loadBackup() {
+      try {
+        const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]");
+        if (!backups.length) return null;
+        return normalizeState(JSON.parse(backups[0].payload));
+      } catch { return null; }
+    }
+    function storeBackupSnapshot(snapshot) {
+      const savedAt = new Date().toISOString();
+      const payload = JSON.stringify({ ...snapshot, savedAt });
+      try {
+        const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]");
+        backups.unshift({ savedAt, payload });
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(backups.slice(0, MAX_BACKUPS)));
+      } catch {
+        localStorage.setItem(BACKUP_KEY, JSON.stringify([{ savedAt, payload }]));
+      }
+    }
+    function makeId() { return `rec-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`; }
+    function todayKey() { return keyFromDate(new Date()); }
+    function keyFromDate(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+    function dateFromKey(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+    function occursOn(record, key) {
+      if (!record.eventDate) return false;
+      return record.eventDate <= key && key <= (record.endDate || record.eventDate);
+    }
+    function visibleRecords() { return state.records.filter(record => !record.hidden && record.recordType !== "blocker"); }
+    function visibleBlockers() { return state.records.filter(record => !record.hidden && record.recordType === "blocker"); }
+    function compareRecords(a, b) {
+      return (a.eventDate || "9999-12-31").localeCompare(b.eventDate || "9999-12-31") || (a.projectName || "").localeCompare(b.projectName || "", "zh-CN");
+    }
+    function escapeHtml(value) {
+      return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+    function formatMonth(date) { return `${date.getFullYear()}年${date.getMonth() + 1}月`; }
+    function formatSelectedDate(key) {
+      const date = dateFromKey(key);
+      const today = key === todayKey() ? "今天，" : "";
+      const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
+      return `${today}${date.getMonth() + 1}月${date.getDate()}日 ${weekday}`;
+    }
+    function formatHomeDate() {
+      const date = new Date();
+      const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
+      return `${date.getMonth() + 1}月${date.getDate()}日 ${weekday}`;
+    }
+    function renderHeader() {
+      const content = {
+        homeView: ["Today", formatHomeDate()],
+        calendarView: ["月历视图", formatMonth(viewDate)],
+        addView: ["", ""],
+        settingsView: ["", ""]
+      }[currentView] || ["Today", formatHomeDate()];
+      $("pageTitle").textContent = content[0];
+      $("pageSubtitle").textContent = content[1];
+      document.body.dataset.view = currentView;
+      $("homeArt").classList.toggle("hidden", currentView !== "homeView");
+      document.querySelector(".topbar").classList.toggle("hidden", ["addView", "settingsView"].includes(currentView));
+      $("todayBtn").classList.toggle("hidden", currentView !== "calendarView");
+    }
+    function formatRange(record) {
+      if (!record.eventDate) return "日期待定";
+      if (!record.endDate || record.endDate === record.eventDate) return record.eventDate.slice(5).replace("-", "月") + "日";
+      return `${record.eventDate.slice(5)} 至 ${record.endDate.slice(5)}`;
+    }
+    function renderCalendar() {
+      $("monthTitle").textContent = formatMonth(viewDate);
+      const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
+      const first = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+      const offset = (first.getDay() + 6) % 7;
+      const start = new Date(first);
+      start.setDate(first.getDate() - offset);
+      const pieces = weekdays.map(day => `<div class="weekday">${day}</div>`);
+      const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+      const totalCells = offset + daysInMonth <= 35 ? 35 : 42;
+      for (let i = 0; i < totalCells; i += 1) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const key = keyFromDate(date);
+        const records = visibleRecords().filter(record => record.status !== "cancelled" && occursOn(record, key));
+        const blockers = visibleBlockers().filter(record => occursOn(record, key));
+        const classes = ["day"];
+        const statuses = new Set(records.map(record => record.status));
+        if (statuses.has("confirmed")) classes.push("has-confirmed");
+        else if (statuses.has("reserved")) classes.push("has-reserved");
+        else if (statuses.has("completed")) classes.push("has-completed");
+        if (blockers.length) classes.push("has-blocker");
+        if (blockers.length && !records.length) classes.push("blocker-only");
+        if (date.getMonth() !== viewDate.getMonth()) classes.push("outside");
+        if (key === todayKey()) classes.push("today");
+        if (key === selectedDate) classes.push("selected");
+        const description = [records.length ? `${records.length}场会议` : "", blockers.length ? `${blockers.length}项占用` : ""].filter(Boolean).join("，");
+        pieces.push(`<button class="${classes.join(" ")}" type="button" data-date="${key}" aria-label="${key}${description ? `，${description}` : ""}"><span class="day-number">${date.getDate()}</span></button>`);
+      }
+      $("calendar").innerHTML = pieces.join("");
+    }
+    function meetingCard(record, showDate = false) {
+      const meta = [record.interpretingType, record.location, record.durationDetail || record.durationType].filter(Boolean);
+      const fullDate = record.eventDate ? record.eventDate.replaceAll("-", "年").replace(/年(\d{2})年/, "年$1月") + "日" : "日期待定";
+      return `<button class="meeting status-${escapeHtml(record.status)}" type="button" data-edit="${escapeHtml(record.id)}">
+        <span class="meeting-top">
+          ${showDate ? `<span class="meeting-date">${escapeHtml(fullDate)}</span>` : `<span class="meeting-date">当日日程</span>`}
+          <span class="meeting-meta">${escapeHtml(meta.join(" · ") || "详细信息待补充")}</span>
+        </span>
+        <span class="meeting-title">${escapeHtml(record.projectName || "未命名日程")}</span>
+      </button>`;
+    }
+    function blockerCard(record) {
+      const startDate = record.eventDate ? dateFromKey(record.eventDate) : null;
+      const endDate = record.endDate ? dateFromKey(record.endDate) : null;
+      const start = startDate ? `${startDate.getFullYear()}年${startDate.getMonth() + 1}月${startDate.getDate()}日` : "日期待定";
+      const end = endDate && record.endDate !== record.eventDate ? `至 ${endDate.getMonth() + 1}月${endDate.getDate()}日` : "全天占用";
+      return `<button class="meeting blocker-item" type="button" data-edit-blocker="${escapeHtml(record.id)}">
+        <span class="meeting-top">
+          <span class="meeting-date">${escapeHtml(start)}</span>
+          <span class="meeting-meta">${escapeHtml(end)}</span>
+        </span>
+        <span class="meeting-title">${escapeHtml(record.projectName || "占用")}</span>
+      </button>`;
+    }
+    function emptyState(title, body) {
+      return `<div class="empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(body)}</span></div>`;
+    }
+    function renderWeekStrip() {
+      const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+      const start = new Date();
+      const mondayOffset = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - mondayOffset + weekOffset * 7);
+      const pieces = [];
+      for (let i = 0; i < 7; i += 1) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const key = keyFromDate(date);
+        const records = visibleRecords().filter(record => record.status !== "cancelled" && occursOn(record, key));
+        const blockers = visibleBlockers().filter(record => occursOn(record, key));
+        const dots = [...new Set(records.map(record => record.status))].slice(0, 3)
+          .map(status => `<span class="event-dot ${escapeHtml(status)}"></span>`).join("");
+        const blockerMark = blockers.length ? `<span class="blocker-mark" aria-hidden="true"></span>` : "";
+        const description = [records.length ? `${records.length}场会议` : "", blockers.length ? `${blockers.length}项占用` : ""].filter(Boolean).join("，") || "空闲";
+        pieces.push(`<button class="week-day ${key === todayKey() ? "today" : ""} ${key === homeSelectedDate ? "selected" : ""}" type="button" data-week-date="${key}" aria-label="${key}，${description}">
+          <span class="week-name">${key === todayKey() ? "今天" : weekdays[date.getDay()].slice(1)}</span>
+          <span class="week-number">${date.getDate()}</span>
+          <span class="dot-row">${dots}${blockerMark}</span>
+        </button>`);
+      }
+      $("weekStrip").innerHTML = pieces.join("");
+    }
+    function renderSelectedDay() {
+      const panel = $("selectedDayPanel");
+      if (!homeSelectedDate) {
+        panel.classList.add("hidden");
+        return;
+      }
+      const records = visibleRecords().filter(record => record.status !== "cancelled" && occursOn(record, homeSelectedDate)).sort(compareRecords);
+      const blockers = visibleBlockers().filter(record => occursOn(record, homeSelectedDate)).sort(compareRecords);
+      if (!records.length && !blockers.length) {
+        panel.classList.add("hidden");
+        return;
+      }
+      $("selectedDayTitle").textContent = formatSelectedDate(homeSelectedDate).replace("今天，", "");
+      $("selectedDayCount").textContent = [records.length ? `${records.length} 场日程` : "", blockers.length ? `${blockers.length} 项占用` : ""].filter(Boolean).join("，");
+      $("selectedDayList").innerHTML = [...blockers.map(blockerCard), ...records.map(record => meetingCard(record))].join("");
+      const strip = $("weekStrip");
+      panel.style.top = `${strip.offsetTop + strip.offsetHeight + 7}px`;
+      panel.classList.remove("hidden");
+    }
+    function renderUpcoming() {
+      const today = todayKey();
+      const upcoming = visibleRecords()
+        .filter(record => (record.endDate || record.eventDate) >= today && ["reserved", "confirmed"].includes(record.status))
+        .sort(compareRecords)
+        .slice(0, 5);
+      const pieces = upcoming.map(record => {
+        const date = dateFromKey(record.eventDate);
+        return `<button class="paper-note status-${escapeHtml(record.status)}" type="button" data-edit="${escapeHtml(record.id)}">
+          <span class="note-date"><strong>${date.getDate()}</strong>${date.getMonth() + 1}月</span>
+          <span class="note-main"><span class="note-title">${escapeHtml(record.projectName || "未命名日程")}</span></span>
+        </button>`;
+      });
+      $("upcomingList").innerHTML = pieces.join("");
+    }
+    function renderAllList() {
+      let records = visibleRecords();
+      if (currentFilter !== "all") records = records.filter(record => record.status === currentFilter);
+      records = currentFilter === "completed" ? records.sort((a, b) => compareRecords(b, a)) : records.sort(compareRecords);
+      const blockers = currentFilter === "all" ? visibleBlockers().sort(compareRecords) : [];
+      const entries = [
+        ...records.map(record => ({ record, html: meetingCard(record, true) })),
+        ...blockers.map(record => ({ record, html: blockerCard(record) }))
+      ].sort((a, b) => compareRecords(a.record, b.record));
+      $("allCount").textContent = `${entries.length} 条`;
+      $("allList").innerHTML = entries.length ? entries.map(entry => entry.html).join("") : emptyState("这里还没有记录", "新增日程或标记占用后会显示在这里");
+      $("localSummary").textContent = `当前有 ${visibleRecords().length} 条日程。每次修改都会立即保存，并保留最近 30 份本机备份。`;
+    }
+    function render() { renderHeader(); renderWeekStrip(); renderSelectedDay(); renderUpcoming(); renderCalendar(); renderAllList(); }
+
+    function rangesOverlap(startA, endA, startB, endB) {
+      return Boolean(startA && startB && startA <= (endB || startB) && startB <= (endA || startA));
+    }
+    function openBlocker(dateKey = selectedDate, record = null) {
+      const existing = record || visibleBlockers().find(item => occursOn(item, dateKey));
+      $("blockerForm").reset();
+      $("blockerId").value = existing?.id || "";
+      $("blockerTitleInput").value = existing?.projectName || "";
+      $("blockerDate").value = existing?.eventDate || dateKey || todayKey();
+      $("blockerEndDate").value = existing?.endDate || existing?.eventDate || dateKey || todayKey();
+      $("blockerNotes").value = existing?.notes === "日程占用标记" ? "" : (existing?.notes || "");
+      $("blockerTitleHeading").textContent = existing ? "编辑占用" : "标记占用";
+      $("deleteBlockerBtn").classList.toggle("hidden", !existing);
+      $("blockerOverlay").classList.remove("hidden");
+      setTimeout(() => $("blockerTitleInput").focus(), 0);
+    }
+    function closeBlocker() {
+      $("blockerOverlay").classList.add("hidden");
+    }
+    function saveBlocker(event) {
+      event.preventDefault();
+      if (!$("blockerForm").reportValidity()) return;
+      let startDate = $("blockerDate").value;
+      let endDate = $("blockerEndDate").value || startDate;
+      if (endDate < startDate) [startDate, endDate] = [endDate, startDate];
+      const id = $("blockerId").value;
+      const existing = state.records.find(record => record.id === id && record.recordType === "blocker");
+      const record = normalizeRecord({
+        ...(existing || {}),
+        id: id || makeId(),
+        recordType: "blocker",
+        projectName: $("blockerTitleInput").value.trim(),
+        eventDate: startDate,
+        endDate,
+        status: "reserved",
+        durationType: "全天",
+        notes: $("blockerNotes").value.trim() || "日程占用标记",
+        updatedAt: new Date().toISOString()
+      });
+      if (id) state.records = state.records.map(item => item.id === id ? record : item);
+      else state.records.push(record);
+      selectedDate = startDate;
+      viewDate = dateFromKey(startDate);
+      persist();
+      render();
+      closeBlocker();
+      showToast(id ? "占用已更新" : "占用已保存");
+    }
+    function deleteBlocker() {
+      const id = $("blockerId").value;
+      if (!id || !window.confirm("确定取消这项占用吗？")) return;
+      state.records = state.records.filter(record => record.id !== id);
+      persist();
+      render();
+      closeBlocker();
+      showToast("占用已取消");
+    }
+
+    function openSheet(record = null) {
+      previousView = currentView === "addView" ? "homeView" : currentView;
+      $("recordForm").reset();
+      $("recordId").value = record?.id || "";
+      $("projectName").value = record?.projectName || "";
+      $("eventDate").value = record?.eventDate || selectedDate;
+      $("endDate").value = record?.endDate || record?.eventDate || selectedDate;
+      $("status").value = record?.status || "reserved";
+      $("durationType").value = record?.durationType || "全天";
+      $("interpretingType").value = record?.interpretingType || "";
+      $("durationDetail").value = record?.durationDetail || "";
+      $("location").value = record?.location || "";
+      $("clientName").value = record?.clientName || "";
+      $("industry").value = record?.industry || "";
+      $("notes").value = record?.notes || "";
+      $("quickInput").value = "";
+      $("recognitionState").textContent = record ? "正在编辑" : "等待识别";
+      $("sheetTitle").textContent = record ? "编辑日程" : "新增日程";
+      $("deleteBtn").classList.toggle("hidden", !record);
+      switchView("addView");
+    }
+    function closeSheet() {
+      switchView(previousView || "homeView");
+    }
+    function saveRecord(event) {
+      event?.preventDefault();
+      if (!$("recordForm").reportValidity()) return;
+      const id = $("recordId").value;
+      const existing = state.records.find(record => record.id === id);
+      const record = normalizeRecord({
+        ...(existing || {}),
+        id: id || makeId(),
+        projectName: $("projectName").value.trim(),
+        eventDate: $("eventDate").value,
+        endDate: $("endDate").value || $("eventDate").value,
+        status: $("status").value,
+        durationType: $("durationType").value,
+        interpretingType: $("interpretingType").value,
+        durationDetail: $("durationDetail").value.trim(),
+        location: $("location").value.trim(),
+        clientName: $("clientName").value.trim(),
+        industry: $("industry").value.trim(),
+        notes: $("notes").value.trim(),
+        updatedAt: new Date().toISOString()
+      });
+      const blockerConflict = visibleBlockers().find(blocker => rangesOverlap(record.eventDate, record.endDate, blocker.eventDate, blocker.endDate));
+      if (blockerConflict && !window.confirm(`这段时间已标记为“${blockerConflict.projectName || "占用"}”，仍要保存会议吗？`)) return;
+      if (id) state.records = state.records.map(item => item.id === id ? record : item);
+      else state.records.push(record);
+      selectedDate = record.eventDate;
+      viewDate = dateFromKey(selectedDate);
+      persist();
+      render();
+      closeSheet();
+      showToast(id ? "日程已更新" : "日程已保存");
+    }
+    function deleteRecord() {
+      const id = $("recordId").value;
+      if (!id || !window.confirm("确定删除这条日程吗？")) return;
+      state.records = state.records.filter(record => record.id !== id);
+      persist();
+      render();
+      closeSheet();
+      showToast("日程已删除");
+    }
+    function exportData() {
+      const payload = JSON.stringify({ ...state, savedAt: new Date().toISOString() }, null, 2);
+      const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `ivy-schedule-${todayKey()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast("数据文件已导出");
+    }
+    function importData(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = normalizeState(JSON.parse(reader.result));
+          if (!window.confirm(`将导入 ${imported.records.length} 条记录并替换本机数据，是否继续？`)) return;
+          state = imported;
+          persist("导入后已保存");
+          render();
+          showToast("数据导入成功");
+        } catch { showToast("无法读取这个数据文件"); }
+        $("importFile").value = "";
+      };
+      reader.readAsText(file, "utf-8");
+    }
+    function restoreBackup() {
+      const restored = loadBackup();
+      if (!restored) return showToast("没有找到本机备份");
+      if (!window.confirm(`将恢复最近备份中的 ${restored.records.length} 条记录，是否继续？`)) return;
+      state = restored;
+      persist("恢复后已保存");
+      render();
+      showToast("已恢复最近备份");
+    }
+    function renderCloudAuth() {
+      const signedIn = Boolean(cloudUser);
+      $("cloudLoginFields").classList.toggle("hidden", signedIn);
+      $("cloudSignedInActions").classList.toggle("hidden", !signedIn);
+      $("cloudAuthStatus").textContent = signedIn
+        ? `已连接：${cloudUser.email || "个人账号"}。${cloudSyncStatus}`
+        : "尚未登录。登录后可以使用安全的双向同步。";
+    }
+    async function initCloudAuth() {
+      const config = window.XIAORICHANG_SUPABASE;
+      if (!window.supabase?.createClient || !config?.url || !config?.publishableKey) {
+        $("cloudAuthStatus").textContent = "云端连接组件未能加载，请确认网络连接后刷新。";
+        return;
+      }
+      supabaseClient = window.supabase.createClient(config.url, config.publishableKey, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+      });
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        $("cloudAuthStatus").textContent = `连接检查失败：${error.message}`;
+        return;
+      }
+      cloudUser = data.session?.user || null;
+      renderCloudAuth();
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        cloudUser = session?.user || null;
+        renderCloudAuth();
+      });
+    }
+    async function signInCloud() {
+      if (!supabaseClient) return showToast("云端连接尚未准备好，请刷新后重试");
+      const email = $("cloudEmail").value.trim();
+      const password = $("cloudPassword").value;
+      if (!email || !password) return showToast("请填写登录邮箱和密码");
+      const button = $("cloudLoginBtn");
+      button.disabled = true;
+      button.textContent = "正在登录……";
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      button.disabled = false;
+      button.textContent = "登录云端";
+      $("cloudPassword").value = "";
+      if (error) return showToast(`登录失败：${error.message}`);
+      cloudUser = data.user;
+      renderCloudAuth();
+      showToast("云端账号登录成功");
+    }
+
+    function formatCloudSyncTime(value) {
+      if (!value) return "刚刚";
+      return new Date(value).toLocaleString("zh-CN", { hour12: false });
+    }
+
+    async function runCloudSync() {
+      if (!supabaseClient || !cloudUser) return showToast("请先登录云端账号");
+      if (!window.XiaorichangCloudSync?.sync) return showToast("同步组件尚未准备好，请刷新后重试");
+      const button = $("syncNowBtn");
+      button.disabled = true;
+      button.textContent = "正在同步……";
+      cloudSyncStatus = "正在比较本机与云端数据……";
+      renderCloudAuth();
+      try {
+        const result = await window.XiaorichangCloudSync.sync({
+          client: supabaseClient,
+          userId: cloudUser.id,
+          scope: "mobile",
+          localState: state,
+          normalizeRemote: normalizeState,
+          backupLocal: storeBackupSnapshot,
+          replaceLocal: remoteState => {
+            state = normalizeState(window.XiaorichangCloudSync.mergeSharedState(state, remoteState));
+            persist("云端数据已保存到本机");
+            selectedDate = todayKey();
+            viewDate = dateFromKey(selectedDate);
+            render();
+          }
+        });
+        const count = state.records.length;
+        if (result.status === "uploaded") cloudSyncStatus = `已上传 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else if (result.status === "downloaded") cloudSyncStatus = `已下载 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else if (result.status === "current") cloudSyncStatus = `已是最新状态 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else cloudSyncStatus = "检测到本机和云端都有修改，已暂停同步，未覆盖任何数据。";
+        renderCloudAuth();
+        showToast(result.status === "conflict" ? "发现同步冲突，未覆盖任何数据" : cloudSyncStatus);
+      } catch (error) {
+        cloudSyncStatus = `同步失败：${error.message || "未知错误"}`;
+        renderCloudAuth();
+        showToast(cloudSyncStatus);
+      } finally {
+        button.disabled = false;
+        button.textContent = "立即同步";
+      }
+    }
+    async function signOutCloud() {
+      if (!supabaseClient) return;
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) return showToast(`退出失败：${error.message}`);
+      cloudUser = null;
+      cloudSyncStatus = "登录后点击“立即同步”检查状态。";
+      renderCloudAuth();
+      showToast("已退出云端账号");
+    }
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2100);
+    }
+    function switchView(viewId) {
+      currentView = viewId;
+      document.querySelectorAll(".view").forEach(view => view.classList.toggle("hidden", view.id !== viewId));
+      document.querySelectorAll(".nav-button, .nav-add").forEach(button => button.classList.toggle("active", button.dataset.view === viewId));
+      document.querySelector(".bottom-nav").classList.remove("hidden-for-form");
+      renderHeader();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function parseQuickEntry() {
+      const raw = $("quickInput").value.trim();
+      if (!raw) return showToast("请先输入或说出邀约信息");
+      const dateMatch = raw.match(/(?:(20\d{2})[年/-])?(\d{1,2})[月/-](\d{1,2})日?/);
+      if (dateMatch) {
+        const year = Number(dateMatch[1] || new Date().getFullYear());
+        $("eventDate").value = `${year}-${String(dateMatch[2]).padStart(2, "0")}-${String(dateMatch[3]).padStart(2, "0")}`;
+        $("endDate").value = $("eventDate").value;
+      }
+      if (/\bSI\b|同传|同声传译/i.test(raw)) $("interpretingType").value = "SI";
+      if (/\bCI\b|交传|交替传译/i.test(raw)) $("interpretingType").value = "CI";
+      if (/确认|已定|确定/.test(raw)) $("status").value = "confirmed";
+      else if (/完成/.test(raw)) $("status").value = "completed";
+      else $("status").value = "reserved";
+      if (/半天/.test(raw)) $("durationType").value = "半天";
+      else if (/全天|全日/.test(raw)) $("durationType").value = "全天";
+      const locations = ["北京", "上海", "广州", "深圳", "大连", "杭州", "成都", "线上", "Zoom", "腾讯会议"];
+      $("location").value = locations.find(item => raw.toLowerCase().includes(item.toLowerCase())) || $("location").value;
+      const cleaned = raw
+        .replace(dateMatch?.[0] || "", "")
+        .replace(/\b(?:SI|CI)\b|同传|同声传译|交传|交替传译|全天|全日|半天|已确认|确认|已定|确定|预定/gi, "")
+        .replace($("location").value || "\u0000", "")
+        .replace(/线上/g, "")
+        .replace(/[，,。；;]+/g, " ")
+        .trim();
+      if (cleaned) $("projectName").value = cleaned;
+      $("notes").value = `快速录入原文：${raw}`;
+      $("recognitionState").textContent = "已识别，请检查";
+      showToast("信息已整理到表单");
+    }
+
+    function toggleVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return showToast("当前浏览器暂不支持语音识别");
+      if (speechRecognizer) {
+        speechRecognizer.stop();
+        return;
+      }
+      speechRecognizer = new SpeechRecognition();
+      speechRecognizer.lang = "zh-CN";
+      speechRecognizer.interimResults = true;
+      speechRecognizer.onresult = event => {
+        $("quickInput").value = Array.from(event.results).map(result => result[0].transcript).join("");
+      };
+      speechRecognizer.onend = () => {
+        speechRecognizer = null;
+        $("voiceInputBtn").textContent = "语音输入";
+      };
+      speechRecognizer.onerror = () => showToast("语音输入没有成功，请再试一次");
+      speechRecognizer.start();
+      $("voiceInputBtn").textContent = "正在聆听";
+    }
+
+    $("calendar").addEventListener("click", event => {
+      const day = event.target.closest("[data-date]");
+      if (!day) return;
+      if (calendarLongPressTriggered) {
+        calendarLongPressTriggered = false;
+        return;
+      }
+      selectedDate = day.dataset.date;
+      viewDate = dateFromKey(selectedDate);
+      renderCalendar();
+    });
+    $("calendar").addEventListener("pointerdown", event => {
+      const day = event.target.closest("[data-date]");
+      if (!day) return;
+      clearTimeout(calendarLongPressTimer);
+      calendarLongPressTriggered = false;
+      calendarLongPressTimer = setTimeout(() => {
+        calendarLongPressTriggered = true;
+        selectedDate = day.dataset.date;
+        viewDate = dateFromKey(selectedDate);
+        renderCalendar();
+        openBlocker(selectedDate);
+      }, 560);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+      $("calendar").addEventListener(type, () => clearTimeout(calendarLongPressTimer));
+    });
+    $("calendar").addEventListener("contextmenu", event => {
+      if (event.target.closest("[data-date]")) event.preventDefault();
+    });
+    $("weekStrip").addEventListener("mouseover", event => {
+      const day = event.target.closest("[data-week-date]");
+      if (!day || day === event.relatedTarget?.closest?.("[data-week-date]")) return;
+      if (day.getAttribute("aria-label")?.includes("空闲")) {
+        if (!homePopoverPinned) {
+          homeSelectedDate = null;
+          $("weekStrip").querySelectorAll(".week-day").forEach(item => item.classList.remove("selected"));
+          renderSelectedDay();
+        }
+        return;
+      }
+      homeSelectedDate = day.dataset.weekDate;
+      $("weekStrip").querySelectorAll(".week-day").forEach(item => item.classList.toggle("selected", item === day));
+      renderSelectedDay();
+    });
+    $("weekStrip").addEventListener("focusin", event => {
+      const day = event.target.closest("[data-week-date]");
+      if (!day || day.getAttribute("aria-label")?.includes("空闲")) return;
+      homeSelectedDate = day.dataset.weekDate;
+      $("weekStrip").querySelectorAll(".week-day").forEach(item => item.classList.toggle("selected", item === day));
+      renderSelectedDay();
+    });
+    $("weekStrip").addEventListener("mouseleave", () => {
+      if (homePopoverPinned) return;
+      homeSelectedDate = null;
+      $("weekStrip").querySelectorAll(".week-day").forEach(item => item.classList.remove("selected"));
+      renderSelectedDay();
+    });
+    $("weekStrip").addEventListener("click", event => {
+      const day = event.target.closest("[data-week-date]");
+      if (!day) return;
+      const closePinned = homePopoverPinned && homeSelectedDate === day.dataset.weekDate;
+      homePopoverPinned = !closePinned;
+      homeSelectedDate = closePinned ? null : day.dataset.weekDate;
+      $("weekStrip").querySelectorAll(".week-day").forEach(item => item.classList.toggle("selected", !closePinned && item === day));
+      renderSelectedDay();
+    });
+    $("weekPrevBtn").addEventListener("click", () => {
+      weekOffset -= 1;
+      homePopoverPinned = false;
+      homeSelectedDate = null;
+      renderWeekStrip();
+      renderSelectedDay();
+    });
+    $("weekNextBtn").addEventListener("click", () => {
+      weekOffset += 1;
+      homePopoverPinned = false;
+      homeSelectedDate = null;
+      renderWeekStrip();
+      renderSelectedDay();
+    });
+    document.addEventListener("click", event => {
+      if (currentView === "homeView" && !event.target.closest("#weekStrip, #selectedDayPanel")) {
+        homePopoverPinned = false;
+        homeSelectedDate = null;
+        $("weekStrip").querySelectorAll(".week-day").forEach(item => item.classList.remove("selected"));
+        renderSelectedDay();
+      }
+      const edit = event.target.closest("[data-edit]");
+      if (edit) openSheet(state.records.find(record => record.id === edit.dataset.edit));
+      const editBlocker = event.target.closest("[data-edit-blocker]");
+      if (editBlocker) openBlocker(selectedDate, state.records.find(record => record.id === editBlocker.dataset.editBlocker));
+    });
+    $("prevMonthBtn").addEventListener("click", () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1); renderCalendar(); });
+    $("nextMonthBtn").addEventListener("click", () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); renderCalendar(); });
+    $("todayBtn").addEventListener("click", () => { selectedDate = todayKey(); viewDate = dateFromKey(selectedDate); render(); });
+    $("addBlockerBtn").addEventListener("click", () => openBlocker(selectedDate));
+    $("closeBlockerBtn").addEventListener("click", closeBlocker);
+    $("blockerForm").addEventListener("submit", saveBlocker);
+    $("deleteBlockerBtn").addEventListener("click", deleteBlocker);
+    $("blockerOverlay").addEventListener("click", event => { if (event.target === $("blockerOverlay")) closeBlocker(); });
+    $("addBtn").addEventListener("click", () => openSheet());
+    $("closeSheetBtn").addEventListener("click", closeSheet);
+    $("parseQuickBtn").addEventListener("click", parseQuickEntry);
+    $("voiceInputBtn").addEventListener("click", toggleVoiceInput);
+    $("recordForm").addEventListener("submit", saveRecord);
+    $("deleteBtn").addEventListener("click", deleteRecord);
+    document.querySelectorAll(".nav-button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+    $("filterBar").addEventListener("click", event => {
+      const button = event.target.closest("[data-filter]");
+      if (!button) return;
+      currentFilter = button.dataset.filter;
+      document.querySelectorAll(".filter-button").forEach(item => item.classList.toggle("active", item === button));
+      renderAllList();
+    });
+    $("exportBtn").addEventListener("click", exportData);
+    $("importBtn").addEventListener("click", () => $("importFile").click());
+    $("importFile").addEventListener("change", event => importData(event.target.files[0]));
+    $("restoreBtn").addEventListener("click", restoreBackup);
+    $("cloudLoginBtn").addEventListener("click", signInCloud);
+    $("syncNowBtn").addEventListener("click", runCloudSync);
+    $("cloudLogoutBtn").addEventListener("click", signOutCloud);
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      if (!$("blockerOverlay").classList.contains("hidden")) closeBlocker();
+      else if (currentView === "addView") closeSheet();
+    });
+
+    render();
+    initCloudAuth();
+  </script>
+</body>
+</html>

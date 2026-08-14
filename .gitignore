@@ -1,0 +1,17 @@
+# dependencies and builds
+/node_modules/
+/.next/
+/.vinext/
+/dist/
+/public/
+/.wrangler/
+/.pnpm-store/
+/output/
+
+# local settings and temporary outputs
+.env*
+.DS_Store
+/outputs/
+/work/
+/tmp/
+npm-debug.log*

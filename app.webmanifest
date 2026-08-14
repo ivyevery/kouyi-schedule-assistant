@@ -1,0 +1,43 @@
+{
+  "id": "./mobile-schedule.html",
+  "name": "口译小助理",
+  "short_name": "口译助理",
+  "description": "口译日程、会后整理、统计与跨设备同步工具",
+  "lang": "zh-CN",
+  "start_url": "./mobile-schedule.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f2",
+  "theme_color": "#246347",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "打开手机版",
+      "short_name": "手机版",
+      "url": "./mobile-schedule.html"
+    },
+    {
+      "name": "打开桌面版",
+      "short_name": "桌面版",
+      "url": "./interpreter-schedule.html"
+    }
+  ]
+}

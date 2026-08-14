@@ -1,0 +1,4020 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2762e">
+  <title>口译小助理</title>
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="icon" href="assets/pwa/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/pwa/icon-192.png">
+  <script src="pwa-register.js" defer></script>
+  <style>
+    :root {
+      /* Desktop uses the same Xiaorichang palette as mobile, with a quieter page tint. */
+      --bg: #fffaf8;
+      --panel: #fffdfb;
+      --ink: #3f3734;
+      --muted: #847773;
+      --line: #eaded9;
+      --brand: #f2762e;
+      --brand-2: #d95b2b;
+      --reserved: #f5b14d;
+      --confirmed: #8fc9e9;
+      --completed: #8dbb91;
+      --cancelled: #aaa19e;
+      --personal: #b184c7;
+      --reserved-soft: #faead6;
+      --confirmed-soft: #e4f2f8;
+      --completed-soft: #e7f0e5;
+      --cancelled-soft: #f0efec;
+      --personal-soft: #f5efff;
+      --pink: #dfabc4;
+      --lemon: #d3d96d;
+      --lilac: #c7bde1;
+      --peach: #edc2a4;
+      --warn: #b17925;
+      --soft: #f7efd9;
+      --shadow: 0 14px 34px rgba(122, 75, 52, 0.08);
+      --serif: "Source Han Serif SC", "Noto Serif CJK SC", "思源宋体", "Songti SC", "STSong", serif;
+      --sans: "Source Han Sans SC", "Noto Sans CJK SC", "思源黑体", "PingFang SC", system-ui, sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.45;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 253, 247, 0.92);
+      color: var(--ink);
+      min-height: 32px;
+      padding: 5px 12px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 rgba(41, 35, 29, 0.06);
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    button:hover {
+      border-color: var(--brand-2);
+      transform: translateY(-1px);
+    }
+
+    button.primary {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: white;
+      box-shadow: 0 8px 18px rgba(242, 118, 46, 0.16);
+    }
+
+    button.danger {
+      border-color: #c9a6a1;
+      background: #fff2ef;
+      color: #8e3328;
+    }
+
+    button.accent-blue {
+      border-color: #c6d9ee;
+      background: #edf6ff;
+      color: #245f98;
+    }
+
+    button.accent-green {
+      border-color: #c9e3cf;
+      background: #edf8ef;
+      color: #347647;
+    }
+
+    button.accent-orange {
+      border-color: #efcfaa;
+      background: #fff0df;
+      color: #9b5e16;
+    }
+
+    button.icon {
+      width: 30px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    a { color: var(--brand); }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      background: rgba(255, 253, 251, 0.88);
+      color: var(--ink);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      border-bottom: 1px solid rgba(234, 222, 217, 0.9);
+      backdrop-filter: blur(16px);
+    }
+
+    header h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(22px, 2.4vw, 30px);
+      letter-spacing: 0;
+      font-weight: 500;
+    }
+
+    header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .header-banner-art {
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .header-banner-art img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 44%;
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(180deg, rgba(255, 250, 246, 0.16), transparent 42%),
+        linear-gradient(90deg, rgba(255, 248, 243, 0.04), transparent 38%, transparent 68%, rgba(255, 248, 243, 0.10));
+      pointer-events: none;
+    }
+
+    .header-title {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      z-index: 2;
+      transform: translateX(-50%);
+      text-align: center;
+      padding: 10px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: 18px;
+      background: rgba(255, 250, 246, 0.78);
+      box-shadow: 0 10px 28px rgba(171, 104, 73, 0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .header-actions {
+      position: absolute;
+      top: 18px;
+      right: 24px;
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .header-actions .header-icon-button {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      border-color: #f1d3c4;
+      color: var(--brand);
+      background: #fff5ed;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.88),
+        0 7px 16px rgba(207, 116, 74, 0.10);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .header-actions .header-icon-button.primary {
+      color: var(--brand);
+      background: #fff5ed;
+      border-color: #f1d3c4;
+    }
+
+    .header-actions .header-icon-button img {
+      display: block;
+      width: 21px;
+      height: 21px;
+      object-fit: contain;
+    }
+
+    .header-actions .header-icon-button:hover {
+      transform: translateY(-2px);
+      border-color: #eab89f;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        0 10px 20px rgba(207, 116, 74, 0.15);
+    }
+
+    .header-actions .header-icon-button::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 12;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: rgba(255, 253, 251, 0.98);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(-3px);
+      pointer-events: none;
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+
+    .header-actions .header-icon-button:hover::after,
+    .header-actions .header-icon-button:focus-visible::after {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    main {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: minmax(500px, 1.18fr) minmax(340px, 0.82fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    section, .panel {
+      background: rgba(255, 253, 251, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    section {
+      padding: 12px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 18px;
+      letter-spacing: 0;
+      font-weight: 500;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      letter-spacing: 0;
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    .muted { color: var(--muted); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .calendar-controls {
+      display: grid;
+      grid-template-columns: 30px 1fr 30px;
+      align-items: center;
+      gap: 6px;
+      min-width: 190px;
+    }
+
+    .calendar-title {
+      text-align: center;
+      font-weight: 700;
+      color: var(--brand);
+    }
+
+    .calendar-dashboard {
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(190px, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .calendar-shell {
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #eadcc6;
+      gap: 1px;
+    }
+
+    .weekday, .day {
+      background: var(--panel);
+      min-width: 0;
+    }
+
+    .weekday {
+      padding: 4px 3px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      background: #fbf3df;
+    }
+
+    .day {
+      aspect-ratio: 1 / 1;
+      min-height: 0;
+      padding: 3px 4px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 2px;
+    }
+
+    .day.outside {
+      background: #fbf6ea;
+      color: #b2aaa0;
+    }
+
+    .day.today {
+      outline: 2px solid var(--lemon);
+      outline-offset: -2px;
+    }
+
+    .date-num {
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .events {
+      display: grid;
+      gap: 2px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .event-chip {
+      border-radius: 999px;
+      padding: 1px 5px;
+      color: white;
+      font-size: 9px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 14px;
+      line-height: 1.25;
+      border: 0;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    .status-reserved { background: var(--reserved); }
+    .status-confirmed { background: var(--confirmed); }
+    .status-completed { background: var(--completed); }
+    .status-cancelled { background: var(--cancelled); }
+    .status-personal { background: var(--personal); }
+
+    .month-side {
+      display: grid;
+      gap: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 253, 247, 0.86);
+      padding: 8px;
+      display: grid;
+      gap: 2px;
+    }
+
+    .stat-number {
+      font-size: 22px;
+      line-height: 1;
+      font-family: var(--serif);
+      color: var(--brand);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .blocker-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(241, 237, 255, 0.92), rgba(255, 248, 232, 0.82));
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .blocker-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .quick-entry {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background:
+        linear-gradient(135deg, rgba(255, 248, 232, 0.96), rgba(240, 247, 255, 0.78));
+      padding: 10px;
+      margin-bottom: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .quick-entry-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .quick-entry textarea {
+      min-height: 54px;
+    }
+
+    .batch-preview {
+      display: grid;
+      gap: 8px;
+    }
+
+    .batch-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 253, 247, 0.82);
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+      text-align: left;
+      min-height: 0;
+      box-shadow: none;
+    }
+
+    .batch-item.active {
+      border-color: var(--brand);
+      background: #eef6ff;
+      box-shadow: 0 0 0 2px rgba(53, 95, 144, 0.14);
+    }
+
+    .batch-item-title {
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .batch-item-meta {
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quick-hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .voice-active {
+      border-color: var(--reserved);
+      background: #fff0e0;
+      color: var(--reserved);
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      font-size: 13px;
+      color: var(--muted);
+      min-width: 0;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      padding: 7px 9px;
+      min-height: 34px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid rgba(75, 146, 212, 0.22);
+      border-color: var(--confirmed);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    .wide { grid-column: 1 / -1; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      min-height: 38px;
+    }
+
+    .checkbox-row input {
+      width: 16px;
+      min-height: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--line);
+      margin: 0 -12px 10px;
+      padding: 0 12px;
+    }
+
+    .tab {
+      border: 0;
+      border-bottom: 3px solid transparent;
+      border-radius: 0;
+      background: transparent;
+      color: var(--muted);
+      min-height: 34px;
+    }
+
+    .tab.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+      font-weight: 700;
+    }
+
+    .hidden { display: none !important; }
+
+    .record-list {
+      display: grid;
+      gap: 8px;
+      max-height: calc(100vh - 260px);
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .record {
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--brand);
+      border-radius: 10px;
+      padding: 9px;
+      display: grid;
+      gap: 5px;
+      background: rgba(255, 253, 247, 0.94);
+    }
+
+    .record.card-reserved {
+      background: var(--reserved-soft);
+      border-color: #efcfaa;
+    }
+
+    .record.card-confirmed {
+      background: var(--confirmed-soft);
+      border-color: #c6d9ee;
+    }
+
+    .record.card-completed {
+      background: var(--completed-soft);
+      border-color: #c9e3cf;
+    }
+
+    .record.card-cancelled {
+      background: var(--cancelled-soft);
+      border-color: #d6d2ca;
+    }
+
+    .record.cancelled {
+      opacity: 0.62;
+      background: #f3f1ee;
+    }
+
+    .record-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .record-main {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 8px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .export-check {
+      width: 16px;
+      min-height: 16px;
+      margin-top: 2px;
+      accent-color: var(--brand);
+    }
+
+    .record-title {
+      font-family: var(--serif);
+      font-size: 15px;
+      font-weight: 500;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .record-meta {
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .record-date-badge {
+      border-radius: 999px;
+      color: white;
+      padding: 2px 8px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .status-pill {
+      color: white;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 11px;
+      white-space: nowrap;
+      align-self: start;
+    }
+
+    .record-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .compact-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 5px;
+    }
+
+    .mini-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 6px 7px;
+      background: #fffdf8;
+      min-width: 0;
+      box-shadow: none;
+      display: grid;
+      gap: 2px;
+      text-align: left;
+    }
+
+    .mini-item.card-reserved,
+    .followup-card.card-reserved {
+      background: var(--reserved-soft);
+      border-color: #efcfaa;
+    }
+
+    .mini-item.card-confirmed,
+    .followup-card.card-confirmed {
+      background: var(--confirmed-soft);
+      border-color: #c6d9ee;
+    }
+
+    .mini-item.card-completed,
+    .followup-card.card-completed {
+      background: var(--completed-soft);
+      border-color: #c9e3cf;
+    }
+
+    .mini-item.card-cancelled,
+    .followup-card.card-cancelled {
+      background: var(--cancelled-soft);
+      border-color: #d6d2ca;
+    }
+
+    .followup-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .followup-card {
+      text-align: left;
+      min-height: 70px;
+      background: #fffdf8;
+      border-color: var(--line);
+      border-radius: 14px;
+      display: grid;
+      gap: 5px;
+      align-content: start;
+    }
+
+    .followup-card.active {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 2px rgba(87, 139, 117, 0.16);
+    }
+
+    .status-field {
+      border: 1px solid #c6d9ee;
+      border-radius: 12px;
+      padding: 8px;
+      background: linear-gradient(135deg, var(--confirmed-soft), rgba(255, 253, 247, 0.86));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+    }
+
+    .status-field span {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .status-field span::after {
+      content: "保存前确认";
+      border-radius: 999px;
+      padding: 2px 7px;
+      color: white;
+      background: var(--confirmed);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-field.status-choice-reserved {
+      border-color: #efcfaa;
+      background: linear-gradient(135deg, var(--reserved-soft), rgba(255, 253, 247, 0.86));
+    }
+
+    .status-field.status-choice-reserved span::after { background: var(--reserved); }
+
+    .status-field.status-choice-confirmed {
+      border-color: #c6d9ee;
+      background: linear-gradient(135deg, var(--confirmed-soft), rgba(255, 253, 247, 0.86));
+    }
+
+    .status-field.status-choice-confirmed span::after { background: var(--confirmed); }
+
+    .status-field.status-choice-completed {
+      border-color: #c9e3cf;
+      background: linear-gradient(135deg, var(--completed-soft), rgba(255, 253, 247, 0.86));
+    }
+
+    .status-field.status-choice-completed span::after { background: var(--completed); }
+
+    .status-field.status-choice-cancelled {
+      border-color: #d6d2ca;
+      background: linear-gradient(135deg, var(--cancelled-soft), rgba(255, 253, 247, 0.86));
+    }
+
+    .status-field.status-choice-cancelled span::after { background: #888b86; }
+
+    .mini-title {
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-time {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--muted);
+      background: #fffdf8;
+    }
+
+    .settings-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .cloud-account {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 253, 247, 0.78);
+    }
+
+    .cloud-account h3,
+    .cloud-account p { margin: 0; }
+
+    .cloud-account p { color: var(--muted); }
+
+    .settings-transfer-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 248, 243, 0.76);
+    }
+
+    .settings-transfer-card h3,
+    .settings-transfer-card p {
+      margin: 0;
+    }
+
+    .settings-transfer-card p {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .settings-transfer-actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 8px;
+    }
+
+    .settings-transfer-actions button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #fffdfb;
+    }
+
+    .settings-transfer-actions img {
+      width: 17px;
+      height: 17px;
+      object-fit: contain;
+    }
+
+    .cloud-login-fields {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .link-box {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .generated {
+      white-space: pre-wrap;
+      background: #fffdf8;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 130px;
+      overflow-wrap: anywhere;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: #355447;
+      color: white;
+      border-radius: 7px;
+      padding: 10px 13px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: 180ms ease;
+      max-width: min(420px, calc(100vw - 36px));
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Desktop dashboard layout: preserve the existing controls and data IDs. */
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      grid-template-rows: 1fr;
+    }
+
+    .workspace {
+      min-width: 0;
+      min-height: 100vh;
+    }
+
+    .desktop-nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 88px 12px 18px;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 253, 251, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 6;
+    }
+
+    .desktop-nav .nav-link {
+      width: 100%;
+      min-height: 64px;
+      padding: 8px 5px;
+      border: 1px solid transparent;
+      border-radius: 16px;
+      background: transparent;
+      box-shadow: none;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 4px;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .desktop-nav .nav-link span {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+    }
+
+    .desktop-nav .nav-link span img {
+      display: block;
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
+
+    .desktop-nav .nav-link.active {
+      color: var(--brand);
+      border-color: #f3d7c7;
+      background: #fff3ec;
+      font-weight: 700;
+    }
+
+    .desktop-nav .nav-link.active span {
+      background: transparent;
+    }
+
+    .desktop-nav .planned-link::after {
+      content: "规划中";
+      font-size: 9px;
+      color: #a99c97;
+    }
+
+    header {
+      min-height: 320px;
+      padding: 0;
+      display: block;
+    }
+
+    header h1 {
+      font-size: clamp(30px, 2.4vw, 38px);
+      font-weight: 600;
+    }
+
+    body[data-active-panel="formPanel"] #headerBannerImage,
+    body[data-active-panel="statsPanel"] #headerBannerImage {
+      object-position: center 43%;
+    }
+
+    body[data-active-panel="afterPanel"] #headerBannerImage {
+      object-position: center 46%;
+    }
+
+    body[data-active-panel="cvPanel"] #headerBannerImage,
+    body[data-active-panel="accountingPanel"] #headerBannerImage,
+    body[data-active-panel="settingsPanel"] #headerBannerImage {
+      object-position: center 44%;
+    }
+
+    .dashboard-layout {
+      width: min(1580px, 100%);
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: minmax(620px, 1.75fr) minmax(330px, 0.82fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .dashboard-primary,
+    .dashboard-side {
+      min-width: 0;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    body:not([data-active-panel="formPanel"]) .today-card {
+      display: none;
+    }
+
+    section {
+      padding: 16px;
+    }
+
+    .today-card {
+      padding: 13px 16px;
+    }
+
+    .today-card .section-head {
+      margin-bottom: 8px;
+    }
+
+    .today-agenda {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .today-agenda .mini-item {
+      min-height: 58px;
+      padding: 9px 11px;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+
+    .today-agenda .mini-time {
+      grid-column: 1 / -1;
+    }
+
+    .today-agenda .empty {
+      grid-column: 1 / -1;
+    }
+
+    .section-intro {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .scheduler-card > .tabs {
+      margin: -4px -4px 12px;
+      padding: 0 4px;
+    }
+
+    .quick-entry {
+      background: #fffaf7;
+      border-color: #f0d8cb;
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .quick-entry textarea {
+      min-height: 76px;
+    }
+
+    .form-grid {
+      gap: 10px 12px;
+    }
+
+    input, select, textarea {
+      border-radius: 12px;
+      border-color: var(--line);
+      background: #fffefc;
+    }
+
+    #statsPanel .record-list {
+      max-height: 510px;
+    }
+
+    #statsPanel .record {
+      border-radius: 14px;
+      background: #fffdfb;
+      box-shadow: none;
+    }
+
+    .stats-overview {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stats-overview .stat-card {
+      min-height: 78px;
+      padding: 12px;
+      border-radius: 14px;
+      align-content: center;
+    }
+
+    .stats-overview .stat-number {
+      font-size: 26px;
+    }
+
+    .records-toolbar-head {
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .records-toolbar-head h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 16px;
+      color: var(--ink);
+    }
+
+    .expense-overview {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 4px 0 16px;
+    }
+
+    .expense-summary-card {
+      min-height: 94px;
+      padding: 14px 16px;
+      border: 1px solid #efd7ca;
+      border-radius: 16px;
+      background: #fff5ed;
+    }
+
+    .expense-summary-card:nth-child(2) {
+      border-color: #d7e7ee;
+      background: #f1f8fb;
+    }
+
+    .expense-summary-card:nth-child(3) {
+      border-color: #d7e5d3;
+      background: #f3f8f0;
+    }
+
+    .expense-summary-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .expense-summary-card strong {
+      display: block;
+      margin-top: 8px;
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .expense-entry-box {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 253, 251, 0.82);
+    }
+
+    .expense-entry-box h3 {
+      margin: 0 0 12px;
+      font-family: var(--serif);
+      font-size: 17px;
+    }
+
+    .expense-empty {
+      margin-top: 14px;
+      padding: 22px;
+      border: 1px dashed #e3cec3;
+      border-radius: 16px;
+      background: #fffaf7;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .expense-empty strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 16px;
+    }
+
+    .calendar-card {
+      padding: 16px;
+    }
+
+    .calendar-heading {
+      align-items: center;
+    }
+
+    .calendar-controls {
+      min-width: 210px;
+    }
+
+    .calendar-shell {
+      max-width: none;
+    }
+
+    .calendar {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      gap: 2px 0;
+      overflow: visible;
+    }
+
+    .weekday,
+    .day,
+    .day.outside {
+      background: transparent;
+    }
+
+    .weekday {
+      padding: 4px 2px 7px;
+      font-size: 10px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .day {
+      aspect-ratio: auto;
+      min-height: 42px;
+      padding: 2px;
+      display: grid;
+      grid-template-rows: 28px;
+      place-items: center;
+    }
+
+    .date-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink);
+      border: 1px solid #ded5d1;
+      background: #fffefc;
+      position: relative;
+    }
+
+    .day.outside .date-num {
+      color: #817672;
+      border-color: #ddd4d0;
+      background: transparent;
+    }
+
+    .day.today {
+      outline: none;
+    }
+
+    .day.today .date-num {
+      box-shadow: 0 0 0 3px var(--brand);
+    }
+
+    .day.day-status-reserved .date-num {
+      border-color: var(--reserved);
+      background: var(--reserved);
+    }
+
+    .day.day-status-confirmed .date-num {
+      border-color: var(--confirmed);
+      background: var(--confirmed);
+    }
+
+    .day.day-status-completed .date-num {
+      border-color: var(--completed);
+      background: var(--completed);
+    }
+
+    .day.day-status-personal .date-num {
+      border-color: var(--personal);
+      background: var(--personal);
+    }
+
+    .day.day-status-reserved .date-num,
+    .day.day-status-confirmed .date-num,
+    .day.day-status-completed .date-num,
+    .day.day-status-personal .date-num {
+      color: var(--ink);
+    }
+
+    .day.day-has-blocker:not(.day-status-personal) .date-num::after {
+      content: "";
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      bottom: -5px;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--personal);
+    }
+
+    .events {
+      display: none;
+    }
+
+    .event-chip {
+      width: 6px;
+      height: 6px;
+      min-height: 6px;
+      padding: 0;
+      border-radius: 50%;
+      color: transparent;
+      box-shadow: none;
+      overflow: hidden;
+    }
+
+    .month-tools {
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+      padding-top: 9px;
+    }
+
+    .month-tools summary {
+      cursor: pointer;
+      color: var(--brand-2);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .month-tools[open] summary {
+      margin-bottom: 10px;
+    }
+
+    .month-tools .stats-grid {
+      margin-bottom: 9px;
+    }
+
+    .month-tools .blocker-box {
+      background: var(--personal-soft);
+      border-color: #e2d5e9;
+      box-shadow: none;
+    }
+
+    .upcoming-card .mini-list {
+      gap: 7px;
+    }
+
+    .upcoming-card .mini-item {
+      min-height: 54px;
+      padding: 9px 10px;
+      border-radius: 13px;
+    }
+
+    .cloud-compact {
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-color: #d9e6d8;
+      background: #f8fbf7;
+    }
+
+    .cloud-compact strong {
+      font-family: var(--serif);
+      font-size: 15px;
+    }
+
+    .cloud-compact p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .cloud-compact button {
+      flex: 0 0 auto;
+      color: #347647;
+      border-color: #c9e3cf;
+      background: #edf8ef;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    button:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 1050px) {
+      .app { grid-template-columns: 84px minmax(0, 1fr); }
+      .desktop-nav { padding-inline: 8px; }
+      header { min-height: 240px; }
+      .header-title { top: 14px; }
+      .header-actions { top: 14px; right: 18px; }
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .dashboard-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cloud-compact { grid-column: 1 / -1; }
+      .record-list { max-height: none; }
+    }
+
+    @media (max-width: 680px) {
+      .app { display: block; }
+      .desktop-nav { display: none; }
+      header {
+        min-height: 82px;
+        padding: 12px 14px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .header-banner-art { display: none; }
+      header::after { display: none; }
+      .header-title {
+        position: static;
+        transform: none;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        text-align: left;
+      }
+
+      .header-actions {
+        position: static;
+        justify-content: flex-end;
+      }
+
+      .settings-transfer-card {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .dashboard-layout { padding: 10px; gap: 10px; }
+      .dashboard-side { grid-template-columns: 1fr; }
+      section { padding: 12px; }
+      .form-grid, .compact-grid { grid-template-columns: 1fr; }
+      .today-agenda, .blocker-grid { grid-template-columns: 1fr; }
+      .stats-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .expense-overview { grid-template-columns: 1fr; }
+      .calendar-shell { max-width: none; }
+      .day { padding: 4px; }
+      .event-chip { font-size: 10px; }
+      .section-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .quick-entry-row { grid-template-columns: 1fr; }
+      .calendar-controls { width: 100%; }
+      .tabs { margin-left: -12px; margin-right: -12px; padding: 0 12px; overflow-x: auto; }
+    }
+
+    @media print {
+      header, .desktop-nav, .form-actions, .tabs, .header-actions, .record-actions, .calendar-controls {
+        display: none !important;
+      }
+      main { display: block; padding: 0; }
+      section { box-shadow: none; break-inside: avoid; margin-bottom: 12px; }
+      body { background: white; }
+    }
+  </style>
+</head>
+<body data-active-panel="formPanel">
+  <div class="app">
+    <nav class="desktop-nav" aria-label="桌面功能导航">
+      <button class="nav-link tab active" type="button" data-tab="formPanel"><span><img src="assets/desktop-icons/home.svg" alt=""></span>首页</button>
+      <button class="nav-link tab" type="button" data-tab="statsPanel"><span><img src="assets/desktop-icons/calendar.svg" alt=""></span>统计</button>
+      <button class="nav-link tab" type="button" data-tab="afterPanel"><span><img src="assets/desktop-icons/book-alt.svg" alt=""></span>会后整理</button>
+      <button class="nav-link tab" type="button" data-tab="cvPanel"><span><img src="assets/desktop-icons/diploma.svg" alt=""></span>简历</button>
+      <button class="nav-link tab" type="button" data-tab="accountingPanel"><span><img src="assets/desktop-icons/piggy-bank.svg" alt=""></span>记账</button>
+      <button class="nav-link tab" type="button" data-tab="settingsPanel"><span><img src="assets/desktop-icons/settings-sliders.svg" alt=""></span>设置</button>
+    </nav>
+
+    <div class="workspace">
+      <header>
+        <div class="header-banner-art">
+          <img id="headerBannerImage" src="assets/desktop-banners/home-business-trip-2000x480.jpg" alt="口译员在机场准备商务出行的插画" fetchpriority="high">
+        </div>
+        <div class="header-actions">
+          <button id="exportJsonBtn" class="header-icon-button" type="button" data-tooltip="保存到本地" title="保存到本地" aria-label="保存到本地">
+            <img src="assets/desktop-icons/download.svg" alt="">
+          </button>
+          <button id="importJsonBtn" class="header-icon-button" type="button" data-tooltip="导入数据文件" title="导入数据文件" aria-label="导入数据文件">
+            <img src="assets/desktop-icons/file-import.svg" alt="">
+          </button>
+          <button id="headerNewBtn" class="header-icon-button primary" type="button" data-tooltip="新增日程" title="新增日程" aria-label="新增日程">
+            <img src="assets/desktop-icons/square-plus.svg" alt="">
+          </button>
+          <input id="jsonFileInput" class="hidden" type="file" accept="application/json,.json">
+        </div>
+      </header>
+
+      <main class="dashboard-layout">
+        <div class="dashboard-primary">
+          <section class="today-card">
+            <div class="section-head">
+              <h2>今日安排</h2>
+              <span class="muted" id="todayLabel"></span>
+            </div>
+            <div id="todayAgenda" class="today-agenda"></div>
+          </section>
+
+          <section class="scheduler-card" id="schedulerCard">
+          <div class="tabs" role="tablist" aria-label="编辑面板">
+            <button class="tab active" type="button" data-tab="formPanel">安排会议</button>
+            <button class="tab" type="button" data-tab="statsPanel">统计</button>
+            <button class="tab" type="button" data-tab="afterPanel">会后整理</button>
+            <button class="tab" type="button" data-tab="cvPanel">简历建议</button>
+            <button class="tab" type="button" data-tab="accountingPanel">记账</button>
+            <button class="tab" type="button" data-tab="settingsPanel">设置</button>
+          </div>
+
+          <div id="formPanel">
+            <div class="section-head">
+              <div>
+                <h2 id="formTitle">安排会议</h2>
+                <p class="section-intro">粘贴或说出邀约信息，识别后确认表单。</p>
+              </div>
+              <button id="resetFormBtn" type="button">清空</button>
+            </div>
+            <div class="quick-entry">
+              <label>
+                快速录入
+                <textarea id="quickInput" placeholder="例：8月1日 上海 医疗器械大会 同传 半天 已确认 客户ABC"></textarea>
+              </label>
+              <div class="quick-entry-row">
+                <div class="quick-hint" id="quickParseHint">没有写年份时，日期会按当年识别。</div>
+                <button id="voiceInputBtn" class="accent-blue" type="button">语音输入</button>
+                <button id="parseQuickBtn" type="button" class="primary">智能识别</button>
+                <button id="quickSaveBtn" class="accent-green" type="button">保存</button>
+              </div>
+              <div id="batchPreview" class="batch-preview hidden"></div>
+            </div>
+            <form id="recordForm" class="form-grid">
+              <input type="hidden" id="recordId">
+              <label>
+                大会/项目名称
+                <input id="projectName" placeholder="如：世界新能源汽车大会">
+              </label>
+              <label>
+                客户/对接人
+                <input id="clientName" placeholder="如：主办方、代理、底老师">
+              </label>
+              <label>
+                行业
+                <input id="industry" list="industryOptions" placeholder="不确定可留空">
+                <datalist id="industryOptions"></datalist>
+              </label>
+              <label>
+                开始日期
+                <input id="eventDate" type="date">
+              </label>
+              <label>
+                结束日期
+                <input id="endDate" type="date">
+              </label>
+              <label>
+                时长类型
+                <select id="durationType">
+                  <option>全天</option>
+                  <option>半天</option>
+                  <option>具体明细</option>
+                </select>
+              </label>
+              <label>
+                具体明细
+                <input id="durationDetail" placeholder="如：09:00-12:00，2小时">
+              </label>
+              <label>
+                地点/线上
+                <input id="location" placeholder="如：北京 / Zoom / 上海">
+              </label>
+              <label>
+                口译类型
+                <select id="interpretingType">
+                  <option value="">不确定</option>
+                  <option>SI</option>
+                  <option>CI</option>
+                  <option>SI + CI</option>
+                  <option>其他</option>
+                </select>
+              </label>
+              <label class="status-field status-choice-reserved" id="statusField">
+                <span>状态</span>
+                <select id="status">
+                  <option value="reserved">预定</option>
+                  <option value="confirmed">确认</option>
+                  <option value="completed">已完成</option>
+                  <option value="cancelled">取消</option>
+                </select>
+              </label>
+              <label>
+                备会资料路径
+                <input id="prepPath" placeholder="/Users/ivy/Desktop/...">
+              </label>
+              <label class="wide">
+                备注
+                <textarea id="notes" placeholder="联系人、报价、发票、差旅、准备重点"></textarea>
+              </label>
+              <label class="wide checkbox-row">
+                <input id="includeInCv" type="checkbox">
+                建议加入简历
+              </label>
+              <div class="wide toolbar form-actions">
+                <button class="primary" type="submit">保存日程</button>
+                <button class="danger" id="deleteRecordBtn" type="button">删除当前记录</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="afterPanel" class="hidden">
+            <div class="section-head">
+              <h2>会后整理</h2>
+              <div class="toolbar">
+                <select id="afterRecordSelect" aria-label="选择会议"></select>
+                <button id="generateMinutesBtn" type="button" class="primary">整理</button>
+              </div>
+            </div>
+            <div id="followupCards" class="followup-cards"></div>
+            <div class="form-grid">
+              <label class="wide">
+                会后笔记
+                <textarea id="postNotes" placeholder="粘贴会议要点、术语、客户反馈、议程重点、可沉淀资料"></textarea>
+              </label>
+              <div class="wide toolbar">
+                <button id="postVoiceBtn" class="accent-blue" type="button">语音输入</button>
+                <span class="quick-hint">可键盘输入或语音输入，保存后会长期保留在这条会议记录里。</span>
+              </div>
+              <label class="wide">
+                会议纪要
+                <textarea id="meetingMinutes"></textarea>
+              </label>
+              <label class="wide">
+                个人资料库条目
+                <textarea id="knowledgeText"></textarea>
+              </label>
+              <div class="wide toolbar">
+                <button id="saveAfterBtn" type="button" class="primary">保存会后内容</button>
+                <button id="copyAfterBtn" class="accent-blue" type="button">复制纪要</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="statsPanel" class="hidden">
+            <div class="section-head">
+              <div>
+                <h2>工作记录与统计</h2>
+                <p class="section-intro">筛选、复制或导出已有工作记录，后续统计功能也将在这里扩展。</p>
+              </div>
+            </div>
+            <div class="stats-overview" id="statsOverview"></div>
+            <div class="section-head records-toolbar-head">
+              <h3 id="listTitle">工作记录 · 预定及确认</h3>
+              <div class="toolbar">
+                <button id="copyListBtn" class="accent-blue" type="button">复制列表</button>
+                <button id="exportWorkRecordsBtn" class="accent-green" type="button">导出工作记录</button>
+                <select id="listFilter" aria-label="筛选状态">
+                  <option value="active" selected>预定及确认</option>
+                  <option value="all">全部</option>
+                  <option value="completed">已完成</option>
+                  <option value="cancelled">取消</option>
+                </select>
+              </div>
+            </div>
+            <div id="recordList" class="record-list"></div>
+          </div>
+
+          <div id="cvPanel" class="hidden">
+            <div class="section-head">
+              <h2>按行业生成简历建议</h2>
+              <button id="copyCvBtn" class="accent-blue" type="button">复制建议</button>
+            </div>
+            <div id="cvSuggestions" class="generated"></div>
+          </div>
+
+          <div id="accountingPanel" class="hidden">
+            <div class="section-head">
+              <div>
+                <h2>差旅费用整理</h2>
+                <p class="section-intro">记录交通、住宿、餐饮和其他会议相关支出。</p>
+              </div>
+            </div>
+            <div class="expense-overview" aria-label="差旅费用概览">
+              <div class="expense-summary-card">
+                <span>本月差旅</span>
+                <strong>¥0.00</strong>
+              </div>
+              <div class="expense-summary-card">
+                <span>待报销</span>
+                <strong>¥0.00</strong>
+              </div>
+              <div class="expense-summary-card">
+                <span>已报销</span>
+                <strong>¥0.00</strong>
+              </div>
+            </div>
+            <div class="expense-entry-box">
+              <h3>新增费用</h3>
+              <div class="form-grid">
+                <label>
+                  关联日程
+                  <select id="expenseScheduleSelect">
+                    <option value="">暂不关联日程</option>
+                  </select>
+                </label>
+                <label>
+                  费用类型
+                  <select id="expenseType">
+                    <option>交通</option>
+                    <option>住宿</option>
+                    <option>餐饮</option>
+                    <option>会务</option>
+                    <option>其他</option>
+                  </select>
+                </label>
+                <label>
+                  日期
+                  <input id="expenseDate" type="date">
+                </label>
+                <label>
+                  金额
+                  <input id="expenseAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+                </label>
+                <label>
+                  报销状态
+                  <select id="expenseStatus">
+                    <option>待报销</option>
+                    <option>已报销</option>
+                    <option>个人支出</option>
+                  </select>
+                </label>
+                <label>
+                  凭证状态
+                  <select id="receiptStatus">
+                    <option>有发票</option>
+                    <option>有收据</option>
+                    <option>待补充</option>
+                    <option>无凭证</option>
+                  </select>
+                </label>
+                <label class="wide">
+                  说明
+                  <textarea id="expenseNotes" placeholder="如：高铁票、机场到酒店打车、会议住宿"></textarea>
+                </label>
+                <div class="wide toolbar form-actions">
+                  <button id="saveExpensePreviewBtn" class="primary" type="button">保存费用</button>
+                </div>
+              </div>
+            </div>
+            <div class="expense-empty">
+              <strong>还没有差旅费用记录</strong>
+              这里暂时展示交互结构，后续可以接入本地保存、统计和导出。
+            </div>
+          </div>
+
+          <div id="settingsPanel" class="hidden">
+            <div class="cloud-account">
+              <div>
+                <h3>口译小助理云端账号</h3>
+                <p id="cloudAuthStatus">正在检查连接状态……</p>
+              </div>
+              <div class="cloud-login-fields" id="cloudLoginFields">
+                <label>
+                  登录邮箱
+                  <input id="cloudEmail" type="email" autocomplete="username" placeholder="你的登录邮箱">
+                </label>
+                <label>
+                  登录密码
+                  <input id="cloudPassword" type="password" autocomplete="current-password" placeholder="口译小助理账号密码">
+                </label>
+                <button id="cloudLoginBtn" type="button" class="primary">登录云端</button>
+              </div>
+              <div class="toolbar hidden" id="cloudSignedInActions">
+                <button id="syncNowBtn" type="button" class="accent-green">立即同步</button>
+                <button id="cloudLogoutBtn" type="button">退出登录</button>
+              </div>
+            </div>
+            <div class="settings-transfer-card">
+              <div>
+                <h3>日历文件</h3>
+                <p>在这里导入或导出 ICS 日历，不占用顶部快捷操作区。</p>
+              </div>
+              <div class="settings-transfer-actions">
+                <button id="importIcsBtn" type="button">
+                  <img src="assets/desktop-icons/file-import.svg" alt="">
+                  导入 ICS
+                </button>
+                <button id="exportIcsBtn" type="button">
+                  <img src="assets/desktop-icons/download.svg" alt="">
+                  导出 ICS
+                </button>
+                <input id="icsFileInput" class="hidden" type="file" accept="text/calendar,.ics">
+              </div>
+            </div>
+            <div class="section-head">
+              <h2>资料与简历链接</h2>
+              <button id="saveSettingsBtn" type="button" class="primary">保存链接</button>
+            </div>
+            <div class="settings-grid">
+              <label>
+                个人知识库/备会资料文件夹
+                <input id="knowledgePath" placeholder="/Users/ivy/Desktop/口译资料存档2025年">
+              </label>
+              <label>
+                双语资料库文件夹
+                <input id="bilingualPath" placeholder="/Users/ivy/Desktop/...">
+              </label>
+              <label>
+                当前简历文件
+                <input id="cvPath" placeholder="/Users/ivy/Desktop/.../CV interpreter ivy WANG yuting bilgl cv.docx">
+              </label>
+              <div class="link-box" id="quickLinks"></div>
+            </div>
+          </div>
+          </section>
+
+        </div>
+
+        <aside class="dashboard-side">
+          <section class="calendar-card">
+            <div class="section-head calendar-heading">
+              <h2>月历</h2>
+              <div class="calendar-controls">
+                <button class="icon" id="prevMonthBtn" type="button" title="上个月" aria-label="上个月">‹</button>
+                <div class="calendar-title" id="monthTitle"></div>
+                <button class="icon" id="nextMonthBtn" type="button" title="下个月" aria-label="下个月">›</button>
+              </div>
+            </div>
+            <div class="calendar-shell">
+              <div class="calendar" id="calendar"></div>
+            </div>
+            <details class="month-tools">
+              <summary>月度统计与占用标记</summary>
+              <div class="stats-grid" id="monthStats"></div>
+              <div class="blocker-box">
+                <h3>日程占用标记</h3>
+                <label>
+                  事项
+                  <input id="blockerTitle" placeholder="如：私人安排 / 出行 / 不接工作">
+                </label>
+                <div class="blocker-grid">
+                  <label>
+                    开始
+                    <input id="blockerDate" type="date">
+                  </label>
+                  <label>
+                    结束
+                    <input id="blockerEndDate" type="date">
+                  </label>
+                </div>
+                <button id="saveBlockerBtn" class="accent-orange" type="button">标记占用</button>
+              </div>
+            </details>
+          </section>
+
+          <section class="upcoming-card">
+          <div class="section-head">
+              <h2>近期日程</h2>
+          </div>
+            <div id="upcomingEvents" class="mini-list"></div>
+          </section>
+
+          <section class="cloud-compact" aria-live="polite">
+            <div>
+              <strong id="cloudCompactTitle">云端状态</strong>
+              <p id="cloudCompactStatus">正在检查连接状态……</p>
+            </div>
+            <button id="compactSyncBtn" type="button">同步</button>
+          </section>
+        </aside>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="cloud-sync.js"></script>
+  <script>
+    const STORAGE_KEY = "ivy-interpreter-schedule-v1";
+    const BACKUP_KEY = "ivy-interpreter-schedule-backups-v1";
+    const MAX_LOCAL_BACKUPS = 30;
+    const STATUS_LABELS = {
+      reserved: "预定",
+      confirmed: "确认",
+      completed: "已完成",
+      cancelled: "取消"
+    };
+    const STATUS_CLASS = {
+      reserved: "status-reserved",
+      confirmed: "status-confirmed",
+      completed: "status-completed",
+      cancelled: "status-cancelled"
+    };
+    const DEFAULT_INDUSTRIES = [
+      "医药/医疗器械",
+      "汽车/新能源",
+      "金融/投资",
+      "科技/互联网",
+      "制造/工业",
+      "教育/培训",
+      "法律/合规",
+      "政府/国际组织",
+      "环保/可持续",
+      "其他"
+    ];
+    const DEFAULT_SETTINGS = {
+      knowledgePath: "/Users/ivy/Desktop/口译资料存档2025年",
+      bilingualPath: "",
+      cvPath: "/Users/ivy/Desktop/口译资料存档2025年/未命名文件夹 3/BD存档/CV interpreter ivy WANG yuting bilgl cv.docx"
+    };
+    const SELF_NAME_PATTERN = /(?:王玉婷|玉婷老师?|王老师|ivy\s*老师?)/i;
+    const CURRENT_EVENT_YEAR = new Date().getFullYear();
+
+    let state = loadState();
+    let viewDate = startOfMonth(new Date());
+    let speechRecognizer = null;
+    let isListening = false;
+    let pendingBatchRecords = [];
+    let activeBatchIndex = -1;
+    let selectedExportIds = new Set();
+    let supabaseClient = null;
+    let cloudUser = null;
+    let cloudSyncStatus = "登录后点击“立即同步”检查状态。";
+
+    const $ = (id) => document.getElementById(id);
+    const formFields = [
+      "recordId", "projectName", "clientName", "industry", "eventDate", "endDate",
+      "durationType", "durationDetail", "location", "interpretingType",
+      "status", "prepPath", "notes", "includeInCv"
+    ];
+
+    function loadState() {
+      const fallback = {
+        version: 1,
+        records: [],
+        settings: { ...DEFAULT_SETTINGS },
+        industries: [...DEFAULT_INDUSTRIES],
+        learnedContacts: []
+      };
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return loadBestLocalBackup() || fallback;
+        const parsed = JSON.parse(saved);
+        const normalized = normalizeState(parsed);
+        if (!normalized.records.length) return loadBestLocalBackup() || normalized;
+        return normalized;
+      } catch {
+        return loadBestLocalBackup() || fallback;
+      }
+    }
+
+    function normalizeState(input) {
+      const source = unwrapImportedState(input);
+      const rawRecords = Array.isArray(source) ? source : Array.isArray(source.records) ? source.records : [];
+      const records = rawRecords.map(normalizeRecord);
+      const settings = { ...DEFAULT_SETTINGS, ...((source && source.settings) || {}) };
+      const industries = unique([...DEFAULT_INDUSTRIES, ...((source && source.industries) || []), ...records.map(r => r.industry).filter(Boolean)]);
+      const learnedContacts = unique([
+        ...((source && source.learnedContacts) || []),
+        ...records.map(r => r.clientName).filter(Boolean)
+      ]).filter(item => !isSelfReference(item));
+      return { version: 1, records, settings, industries, learnedContacts };
+    }
+
+    function unwrapImportedState(input) {
+      if (!input) return {};
+      if (Array.isArray(input)) return input;
+      if (typeof input.payload === "string") {
+        try {
+          return unwrapImportedState(JSON.parse(input.payload));
+        } catch {
+          return input;
+        }
+      }
+      if (Array.isArray(input.backups) && input.backups.length) {
+        const candidate = input.backups.find(item => item && item.payload);
+        if (candidate) return unwrapImportedState(candidate);
+      }
+      return input;
+    }
+
+    function normalizeRecord(record) {
+      return {
+        id: record.id || makeId(),
+        recordType: record.recordType || (record.isPersonal ? "blocker" : "meeting"),
+        projectName: record.projectName || "",
+        clientName: record.clientName || "",
+        industry: record.industry || "",
+        eventDate: record.eventDate || "",
+        endDate: record.endDate || "",
+        durationType: record.durationType || "全天",
+        durationDetail: record.durationDetail || "",
+        location: record.location || "",
+        interpretingType: record.interpretingType || "",
+        status: record.status || "reserved",
+        prepPath: record.prepPath || "",
+        notes: record.notes || "",
+        postNotes: record.postNotes || "",
+        meetingMinutes: record.meetingMinutes || "",
+        knowledgeText: record.knowledgeText || "",
+        hidden: Boolean(record.hidden),
+        includeInCv: Boolean(record.includeInCv),
+        updatedAt: record.updatedAt || new Date().toISOString()
+      };
+    }
+
+    function persist() {
+      const payload = JSON.stringify({ ...state, savedAt: new Date().toISOString() });
+      localStorage.setItem(STORAGE_KEY, payload);
+      writeLocalBackup(payload);
+    }
+
+    function writeLocalBackup(payload) {
+      try {
+        const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]");
+        backups.unshift({
+          savedAt: new Date().toISOString(),
+          payload
+        });
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(backups.slice(0, MAX_LOCAL_BACKUPS)));
+      } catch {
+        localStorage.setItem(BACKUP_KEY, JSON.stringify([{ savedAt: new Date().toISOString(), payload }]));
+      }
+    }
+
+    function loadBestLocalBackup() {
+      try {
+        const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]");
+        if (!backups.length) return null;
+        for (const backup of backups) {
+          const restored = normalizeState(JSON.parse(backup.payload));
+          if (restored.records.length) return restored;
+        }
+        return normalizeState(JSON.parse(backups[0].payload));
+      } catch {
+        return null;
+      }
+    }
+
+    function restoreLocalBackup() {
+      const restored = loadBestLocalBackup();
+      if (!restored) {
+        showToast("没有找到本机备份。");
+        return;
+      }
+      state = restored;
+      persist();
+      resetForm();
+      renderAll();
+      showToast(`已恢复本机备份：${restored.records.length} 条记录。`);
+    }
+
+    function makeId() {
+      return "rec-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function unique(items) {
+      return [...new Set(items.map(item => String(item).trim()).filter(Boolean))];
+    }
+
+    function frequentContacts() {
+      return unique(state.learnedContacts || [])
+        .filter(item => !isSelfReference(item))
+        .sort((a, b) => b.length - a.length);
+    }
+
+    function learnFromRecord(record) {
+      const contact = cleanupToken(record.clientName);
+      if (!contact || isSelfReference(contact)) return;
+      state.learnedContacts = unique([...(state.learnedContacts || []), contact]);
+    }
+
+    function startOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    function formatMonth(date) {
+      return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, "0")}月`;
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return "未定";
+      const [year, month, day] = dateString.split("-");
+      return `${year}.${month}.${day}`;
+    }
+
+    function formatDateRange(record) {
+      if (!record.eventDate) return "未定";
+      if (!record.endDate || record.endDate === record.eventDate) return formatDate(record.eventDate);
+      return `${formatDate(record.eventDate)}-${formatDate(record.endDate)}`;
+    }
+
+    function yearOf(dateString) {
+      return dateString ? dateString.slice(0, 4) : "日期待定";
+    }
+
+    function todayString() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function compareRecords(a, b) {
+      return (a.eventDate || "9999-12-31").localeCompare(b.eventDate || "9999-12-31") ||
+        a.projectName.localeCompare(b.projectName, "zh-Hans-CN");
+    }
+
+    function compareRecordsForList(a, b, filter) {
+      if (filter === "completed") return compareRecords(b, a);
+      return compareRecords(a, b);
+    }
+
+    function recordOccursOn(record, dateKey) {
+      if (!record.eventDate) return false;
+      const endDate = record.endDate || record.eventDate;
+      return record.eventDate <= dateKey && dateKey <= endDate;
+    }
+
+    function recordOccursInMonth(record, monthDate) {
+      if (!record.eventDate) return false;
+      const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const end = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+      const monthStart = toDateInputValue(start);
+      const monthEnd = toDateInputValue(end);
+      const recordEnd = record.endDate || record.eventDate;
+      return record.eventDate <= monthEnd && recordEnd >= monthStart;
+    }
+
+    function renderAll() {
+      renderIndustryOptions();
+      renderCalendar();
+      renderList();
+      renderOverview();
+      renderAfterSelect();
+      renderFollowupCards();
+      renderSettings();
+      renderCvSuggestions();
+      renderStats();
+      updateStatusHighlight();
+    }
+
+    function updateStatusHighlight() {
+      const field = $("statusField");
+      if (!field) return;
+      field.classList.remove(
+        "status-choice-reserved",
+        "status-choice-confirmed",
+        "status-choice-completed",
+        "status-choice-cancelled"
+      );
+      field.classList.add(`status-choice-${$("status").value || "reserved"}`);
+    }
+
+    function renderStats() {
+      const records = visibleMeetingRecords();
+      const total = records.length;
+      const completed = records.filter(r => r.status === "completed").length;
+      const upcoming = records.filter(r => (r.endDate || r.eventDate) >= todayString() && r.status !== "cancelled").length;
+      $("todayLabel").textContent = formatDate(todayString());
+      $("quickParseHint").textContent = `没有写年份时，日期会按当年识别：${CURRENT_EVENT_YEAR} 年。`;
+      const statsOverview = $("statsOverview");
+      if (statsOverview) {
+        const active = records.filter(record => record.status === "reserved" || record.status === "confirmed").length;
+        const monthCount = records.filter(record => recordOccursInMonth(record, viewDate)).length;
+        statsOverview.innerHTML = [
+          ["全部记录", total, "var(--brand)"],
+          ["预定及确认", active, "var(--reserved)"],
+          ["已完成", completed, "var(--completed)"],
+          ["本月日程", monthCount, "var(--confirmed)"]
+        ].map(([label, value, color]) => `
+          <div class="stat-card">
+            <div class="stat-number" style="color:${color}">${value}</div>
+            <div class="stat-label">${label}</div>
+          </div>
+        `).join("");
+      }
+      renderMonthStats();
+    }
+
+    function renderMonthStats() {
+      const monthRecords = visibleMeetingRecords().filter(record => recordOccursInMonth(record, viewDate));
+      const counts = {
+        reserved: monthRecords.filter(record => record.status === "reserved").length,
+        confirmed: monthRecords.filter(record => record.status === "confirmed").length,
+        completed: monthRecords.filter(record => record.status === "completed").length,
+        cancelled: monthRecords.filter(record => record.status === "cancelled").length
+      };
+      $("monthStats").innerHTML = [
+        ["预定会议", counts.reserved, "reserved"],
+        ["确定会议", counts.confirmed, "confirmed"],
+        ["已完成会议", counts.completed, "completed"],
+        ["取消会议", counts.cancelled, "cancelled"]
+      ].map(([label, value, status]) => `
+        <div class="stat-card">
+          <div class="stat-number" style="color:${statusColor(status)}">${value}</div>
+          <div class="stat-label">${label}</div>
+        </div>
+      `).join("");
+    }
+
+    function visibleRecords() {
+      return state.records.filter(record => !record.hidden);
+    }
+
+    function visibleMeetingRecords() {
+      return visibleRecords().filter(record => record.recordType !== "blocker");
+    }
+
+    function visibleBlockers() {
+      return visibleRecords().filter(record => record.recordType === "blocker");
+    }
+
+    function renderIndustryOptions() {
+      $("industryOptions").innerHTML = state.industries
+        .map(item => `<option value="${escapeHtml(item)}"></option>`)
+        .join("");
+    }
+
+    function renderCalendar() {
+      $("monthTitle").textContent = formatMonth(viewDate);
+      const calendar = $("calendar");
+      const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
+      const first = new Date(viewDate);
+      const mondayOffset = (first.getDay() + 6) % 7;
+      const gridStart = new Date(first);
+      gridStart.setDate(first.getDate() - mondayOffset);
+      const activeMonth = viewDate.getMonth();
+      const today = todayString();
+      const pieces = weekdays.map(day => `<div class="weekday">${day}</div>`);
+
+      for (let i = 0; i < 42; i += 1) {
+        const current = new Date(gridStart);
+        current.setDate(gridStart.getDate() + i);
+        const dateKey = toDateInputValue(current);
+        const records = visibleRecords()
+          .filter(record => recordOccursOn(record, dateKey) && record.status !== "cancelled")
+          .sort(compareRecords);
+        const classes = ["day"];
+        if (current.getMonth() !== activeMonth) classes.push("outside");
+        if (dateKey === today) classes.push("today");
+        const meetings = records.filter(record => record.recordType !== "blocker");
+        const blockers = records.filter(record => record.recordType === "blocker");
+        const primaryStatus = ["confirmed", "reserved", "completed"]
+          .find(status => meetings.some(record => record.status === status));
+        if (primaryStatus) classes.push(`day-status-${primaryStatus}`);
+        else if (blockers.length) classes.push("day-status-personal");
+        if (primaryStatus && blockers.length) classes.push("day-has-blocker");
+        const summary = records.map(record => `${record.recordType === "blocker" ? "占用" : STATUS_LABELS[record.status]}：${record.projectName || "未命名"}`).join("；");
+        pieces.push(`
+          <div class="${classes.join(" ")}"${summary ? ` title="${escapeHtml(summary)}"` : ""}>
+            <div class="date-num">${current.getDate()}</div>
+          </div>
+        `);
+      }
+      calendar.innerHTML = pieces.join("");
+    }
+
+    function toDateInputValue(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+
+    function renderList() {
+      const filter = $("listFilter").value;
+      $("listTitle").textContent = listTitleForFilter(filter);
+      const records = visibleMeetingRecords()
+        .filter(record => filter === "all" || statusMatchesListFilter(record, filter))
+        .sort((a, b) => compareRecordsForList(a, b, filter));
+      if (!records.length) {
+        $("recordList").innerHTML = `<div class="empty">暂无符合条件的预约。</div>`;
+        return;
+      }
+      $("recordList").innerHTML = records.map(record => {
+        const statusClass = STATUS_CLASS[record.status];
+        const cardClass = cardClassForStatus(record.status);
+        return `
+          <article class="record ${cardClass} ${record.status === "cancelled" ? "cancelled" : ""}" style="border-left-color: ${statusColor(record.status)}">
+            <div class="record-top">
+              <div class="record-main">
+                <input class="export-check" type="checkbox" data-export-id="${record.id}" title="选择导出" aria-label="选择导出 ${escapeHtml(record.projectName || "未命名项目")}" ${selectedExportIds.has(record.id) ? "checked" : ""}>
+                <div>
+                  <div class="record-title">${escapeHtml(record.projectName || "未命名项目")}</div>
+                  <div class="record-meta">
+                    <span class="record-date-badge ${statusClass}">${formatDateRange(record)}</span>
+                    <span>${escapeHtml(record.industry || "未分类")}</span>
+                    <span>${escapeHtml(record.interpretingType || "类型待定")}</span>
+                    <span>${escapeHtml(durationText(record))}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="status-pill ${statusClass}">${STATUS_LABELS[record.status]}</span>
+            </div>
+            <div class="muted">${escapeHtml([record.clientName, record.location].filter(Boolean).join(" · ") || "对接人与地点待补充")}</div>
+            <div class="record-actions">
+              <button class="accent-blue" type="button" data-edit="${record.id}">编辑</button>
+              <button class="accent-green" type="button" data-after="${record.id}">会后整理</button>
+              ${record.status === "cancelled" ? `<button class="accent-orange" type="button" data-hide="${record.id}">不再显示</button>` : `<button class="danger" type="button" data-cancel="${record.id}">取消</button>`}
+            </div>
+          </article>
+        `;
+      }).join("");
+      $("recordList").querySelectorAll("[data-edit]").forEach(button => {
+        button.addEventListener("click", () => editRecord(button.dataset.edit));
+      });
+      $("recordList").querySelectorAll("[data-after]").forEach(button => {
+        button.addEventListener("click", () => openAfter(button.dataset.after));
+      });
+      $("recordList").querySelectorAll("[data-cancel]").forEach(button => {
+        button.addEventListener("click", () => cancelRecord(button.dataset.cancel));
+      });
+      $("recordList").querySelectorAll("[data-hide]").forEach(button => {
+        button.addEventListener("click", () => hideRecord(button.dataset.hide));
+      });
+      $("recordList").querySelectorAll("[data-export-id]").forEach(input => {
+        input.addEventListener("change", () => toggleExportSelection(input.dataset.exportId, input.checked));
+      });
+    }
+
+    function statusMatchesListFilter(record, filter) {
+      if (filter === "active") return record.status === "reserved" || record.status === "confirmed";
+      return record.status === filter;
+    }
+
+    function listTitleForFilter(filter) {
+      return {
+        active: "工作记录 · 预定及确认",
+        all: "工作记录 · 全部预约",
+        completed: "工作记录 · 已完成",
+        cancelled: "工作记录 · 已取消"
+      }[filter] || "工作预约列表";
+    }
+
+    function cardClassForStatus(status) {
+      return {
+        reserved: "card-reserved",
+        confirmed: "card-confirmed",
+        completed: "card-completed",
+        cancelled: "card-cancelled"
+      }[status] || "card-confirmed";
+    }
+
+    function toggleExportSelection(id, checked) {
+      if (checked) {
+        selectedExportIds.add(id);
+      } else {
+        selectedExportIds.delete(id);
+      }
+    }
+
+    function statusColor(status) {
+      return {
+        reserved: "var(--reserved)",
+        confirmed: "var(--confirmed)",
+        completed: "var(--completed)",
+        cancelled: "var(--cancelled)"
+      }[status] || "var(--brand)";
+    }
+
+    function durationText(record) {
+      if (record.durationDetail && /个全天/.test(record.durationDetail)) return record.durationDetail;
+      return record.durationType === "具体明细" && record.durationDetail
+        ? record.durationDetail
+        : [record.durationType, record.durationDetail].filter(Boolean).join(" · ");
+    }
+
+    function renderOverview() {
+      const today = todayString();
+      const todayRecords = visibleMeetingRecords()
+        .filter(record => recordOccursOn(record, today) && record.status !== "cancelled")
+        .sort(compareRecords)
+        .slice(0, 4);
+      const upcoming = visibleMeetingRecords()
+        .filter(record => (record.endDate || record.eventDate) >= today && record.status !== "completed" && record.status !== "cancelled")
+        .sort(compareRecords)
+        .slice(0, 5);
+      $("todayAgenda").innerHTML = miniList(todayRecords, "今天暂无会议安排。");
+      $("upcomingEvents").innerHTML = miniList(upcoming, "暂无未来预约。");
+    }
+
+    function miniList(records, emptyText) {
+      if (!records.length) return `<div class="empty">${emptyText}</div>`;
+      return records.map(record => `
+        <button class="mini-item ${cardClassForStatus(record.status)}" type="button" data-mini="${record.id}">
+          <div class="mini-title">${escapeHtml(record.projectName || "未命名项目")}</div>
+          <div class="mini-time">${formatDateRange(record)}</div>
+        </button>
+      `).join("");
+    }
+
+    function renderAfterSelect() {
+      const records = visibleMeetingRecords().sort(compareRecords);
+      $("afterRecordSelect").innerHTML = records.length
+        ? records.map(record => `<option value="${record.id}">${escapeHtml(formatDateRange(record))} · ${escapeHtml(record.projectName || "未命名项目")}</option>`).join("")
+        : `<option value="">暂无会议</option>`;
+      const currentId = $("recordId").value || records[0]?.id || "";
+      if (currentId && records.some(record => record.id === currentId)) {
+        $("afterRecordSelect").value = currentId;
+        fillAfterFields(currentId);
+      }
+    }
+
+    function renderFollowupCards() {
+      const container = $("followupCards");
+      if (!container) return;
+      const today = todayString();
+      const pending = visibleRecords()
+        .filter(record => record.recordType !== "blocker")
+        .filter(record => record.status !== "cancelled")
+        .filter(record => record.eventDate && record.eventDate <= today)
+        .filter(record => !hasFollowup(record))
+        .sort(compareRecords);
+      if (!pending.length) {
+        container.innerHTML = `<div class="empty">没有待跟进的会后记录。</div>`;
+        return;
+      }
+      const currentId = $("afterRecordSelect").value;
+      container.innerHTML = pending.map(record => `
+        <button class="followup-card ${cardClassForStatus(record.status)} ${record.id === currentId ? "active" : ""}" type="button" data-followup="${record.id}">
+          <span class="mini-title">${escapeHtml(record.projectName || "未命名项目")}</span>
+          <span class="record-meta">${formatDateRange(record)} · ${escapeHtml(record.clientName || "对接人待补充")}</span>
+          <span class="record-meta">${escapeHtml([record.location, durationText(record)].filter(Boolean).join(" · ") || "信息待补充")}</span>
+        </button>
+      `).join("");
+      container.querySelectorAll("[data-followup]").forEach(button => {
+        button.addEventListener("click", () => openAfter(button.dataset.followup));
+      });
+    }
+
+    function hasFollowup(record) {
+      return Boolean((record.postNotes || "").trim() || (record.meetingMinutes || "").trim() || (record.knowledgeText || "").trim());
+    }
+
+    function renderSettings() {
+      $("knowledgePath").value = state.settings.knowledgePath || "";
+      $("bilingualPath").value = state.settings.bilingualPath || "";
+      $("cvPath").value = state.settings.cvPath || "";
+      const links = [
+        ["个人知识库/备会资料", state.settings.knowledgePath],
+        ["双语资料库", state.settings.bilingualPath],
+        ["当前简历文件", state.settings.cvPath]
+      ].filter(([, value]) => value);
+      $("quickLinks").innerHTML = links.length
+        ? links.map(([label, value]) => `<a href="${pathToFileUrl(value)}">${escapeHtml(label)}</a><span class="muted">${escapeHtml(value)}</span>`).join("")
+        : `<div class="empty">暂无链接。</div>`;
+    }
+
+    function pathToFileUrl(path) {
+      if (/^https?:\/\//i.test(path) || /^file:\/\//i.test(path)) return path;
+      return "file://" + path.split("/").map(part => encodeURIComponent(part)).join("/");
+    }
+
+    function renderCvSuggestions() {
+      const grouped = {};
+      visibleMeetingRecords()
+        .filter(record => record.status === "completed" && record.includeInCv)
+        .sort(compareRecords)
+        .forEach(record => {
+          const key = record.industry || "其他";
+          grouped[key] ||= [];
+          grouped[key].push(record);
+        });
+      const industries = Object.keys(grouped).sort((a, b) => a.localeCompare(b, "zh-Hans-CN"));
+      if (!industries.length) {
+        $("cvSuggestions").textContent = "暂无可加入简历的已完成项目。";
+        return;
+      }
+      $("cvSuggestions").textContent = industries.map(industry => {
+        const lines = grouped[industry].map(record => {
+          const detail = durationText(record);
+          const cn = `${yearOf(record.eventDate)} ${record.projectName || "未命名项目"}｜${record.interpretingType || "类型待定"}｜${detail || "时长待补充"}｜${record.clientName || "对接人待补充"}`;
+          const en = `${yearOf(record.eventDate)} ${record.projectName || "Untitled project"} | ${record.interpretingType || "Type TBD"} | ${industry} | ${record.location || "Location TBD"}`;
+          return `- ${cn}\n  ${en}`;
+        }).join("\n");
+        return `${industry}\n${lines}`;
+      }).join("\n\n");
+    }
+
+    function parseQuickEntry() {
+      const raw = $("quickInput").value.trim();
+      if (!raw) {
+        showToast("请先输入或语音录入预约信息。");
+        return;
+      }
+      pendingBatchRecords = [];
+      $("batchPreview").classList.add("hidden");
+      const entries = splitQuickEntries(raw);
+      if (entries.length > 1) {
+        pendingBatchRecords = entries.map(entry => {
+          const parsed = parseAppointmentText(entry);
+          return recordFromParsedAppointment(parsed, entry);
+        });
+        activeBatchIndex = -1;
+        renderBatchPreview();
+        showToast(`已识别 ${pendingBatchRecords.length} 条议程。请点击一条草稿进行编辑。`);
+        return;
+      }
+      resetForm();
+      const parsed = parseAppointmentText(raw);
+      if (parsed.eventDate) $("eventDate").value = parsed.eventDate;
+      if (parsed.eventDate) $("endDate").value = parsed.endDate || "";
+      if (parsed.status) $("status").value = parsed.status;
+      $("interpretingType").value = parsed.interpretingType || "";
+      if (parsed.durationType) $("durationType").value = parsed.durationType;
+      $("durationDetail").value = parsed.durationDetail || "";
+      $("industry").value = parsed.industry || "";
+      $("location").value = parsed.location || "";
+      $("clientName").value = parsed.clientName || "";
+      $("projectName").value = parsed.projectName || "";
+      $("notes").value = mergeNotes($("notes").value, `快速录入原文：${raw}`);
+      if (!$("status").value) $("status").value = "reserved";
+      updateStatusHighlight();
+      $("formTitle").textContent = "安排会议";
+      showToast(parsed.eventDate ? `已识别：${formatDateRange(parsed)}。请检查后保存。` : "已识别到表单，请补充日期后保存。");
+    }
+
+    function splitQuickEntries(raw) {
+      return String(raw || "")
+        .split(/\n+/)
+        .map(item => item.trim())
+        .filter(Boolean)
+        .slice(0, 5);
+    }
+
+    function renderBatchPreview() {
+      const container = $("batchPreview");
+      if (!pendingBatchRecords.length) {
+        container.classList.add("hidden");
+        container.innerHTML = "";
+        return;
+      }
+      container.classList.remove("hidden");
+      container.innerHTML = pendingBatchRecords.map((record, index) => `
+        <button class="batch-item ${index === activeBatchIndex ? "active" : ""}" type="button" data-batch-index="${index}">
+          <div class="batch-item-title">${index + 1}. ${escapeHtml(record.projectName || "未命名项目")}</div>
+          <div class="batch-item-meta">
+            <span>${formatDateRange(record)}</span>
+            <span>${escapeHtml(durationText(record) || "时长待补充")}</span>
+            ${record.location ? `<span>${escapeHtml(record.location)}</span>` : ""}
+            ${record.industry ? `<span>${escapeHtml(record.industry)}</span>` : ""}
+            ${record.clientName ? `<span>${escapeHtml(record.clientName)}</span>` : ""}
+          </div>
+        </button>
+      `).join("");
+      container.querySelectorAll("[data-batch-index]").forEach(button => {
+        button.addEventListener("click", () => loadBatchDraft(Number(button.dataset.batchIndex)));
+      });
+    }
+
+    function loadBatchDraft(index) {
+      if (activeBatchIndex >= 0 && pendingBatchRecords[activeBatchIndex]) {
+        pendingBatchRecords[activeBatchIndex] = buildRecordFromForm(pendingBatchRecords[activeBatchIndex].id || makeId());
+      }
+      const record = pendingBatchRecords[index];
+      if (!record) return;
+      activeBatchIndex = index;
+      fillFormFromRecord(record, true);
+      renderBatchPreview();
+      showToast(`正在编辑第 ${index + 1} 条草稿，检查后点击保存。`);
+    }
+
+    function recordFromParsedAppointment(parsed, raw) {
+      return normalizeRecord({
+        projectName: parsed.projectName || raw,
+        clientName: parsed.clientName || "",
+        industry: parsed.industry || "",
+        eventDate: parsed.eventDate || "",
+        endDate: parsed.endDate || "",
+        durationType: parsed.durationType || "全天",
+        durationDetail: parsed.durationDetail || "",
+        location: parsed.location || "",
+        interpretingType: parsed.interpretingType || "",
+        status: parsed.status || "reserved",
+        notes: `快速录入原文：${raw}`,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    function parseAppointmentText(raw) {
+      const text = normalizeQuickText(raw);
+      const dateResult = parseDateFromText(text);
+      const status = parseStatus(text);
+      const interpretingType = parseInterpretingType(text);
+      const duration = parseDuration(text, dateResult);
+      const industry = parseIndustry(text);
+      const location = parseLocation(text);
+      const clientName = parseClient(text);
+      const guessedProjectName = parseProjectName(text, [dateResult?.matchedText, status?.matchedText, interpretingType?.matchedText, duration.matchedText, industry, location, clientName]);
+      const projectName = isWeakProjectName(guessedProjectName) ? raw : guessedProjectName;
+      return {
+        eventDate: dateResult?.date || "",
+        endDate: dateResult?.endDate || "",
+        status: status?.value || "reserved",
+        interpretingType: interpretingType?.value || "",
+        durationType: duration.type,
+        durationDetail: duration.detail,
+        industry,
+        location,
+        clientName,
+        projectName
+      };
+    }
+
+    function isWeakProjectName(value) {
+      const text = String(value || "").trim();
+      return !text || text.length <= 1 || ["留", "待定", "未知", "不确定"].includes(text) || /方面$/.test(text);
+    }
+
+    function normalizeQuickText(text) {
+      return text
+        .replace(/[０-９]/g, char => String.fromCharCode(char.charCodeAt(0) - 65248))
+        .replace(/[．。]/g, ".")
+        .replace(/[／]/g, "/")
+        .replace(/(\d)\s*[~～]\s*(\d)/g, "$1-$2")
+        .replace(/[－–—]/g, "-")
+        .replace(/[，。；、]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function parseDateFromText(text) {
+      const rangeResult = parseDateRangeFromText(text);
+      if (rangeResult) return rangeResult;
+      const patterns = [
+        { regex: /(?:(20\d{2})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*(?:日|号)?/, yearGroup: 1, monthGroup: 2, dayGroup: 3 },
+        { regex: /(20\d{2})[./-](\d{1,2})[./-](\d{1,2})/, yearGroup: 1, monthGroup: 2, dayGroup: 3 },
+        { regex: /(?:^|[^\d:])(\d{1,2})\s*[./]\s*(\d{1,2})(?![\d:])/, yearGroup: null, monthGroup: 1, dayGroup: 2 }
+      ];
+      for (const pattern of patterns) {
+        const match = text.match(pattern.regex);
+        if (!match) continue;
+        const year = pattern.yearGroup && match[pattern.yearGroup] ? Number(match[pattern.yearGroup]) : CURRENT_EVENT_YEAR;
+        const month = Number(match[pattern.monthGroup]);
+        const day = Number(match[pattern.dayGroup]);
+        if (isValidDateParts(year, month, day)) {
+          const matchedText = pattern.yearGroup ? match[0] : match[0].replace(/^[^\d]+/, "");
+          return {
+            date: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+            endDate: "",
+            matchedText
+          };
+        }
+      }
+      return null;
+    }
+
+    function parseDateRangeFromText(text) {
+      const patterns = [
+        { regex: /(?:(20\d{2})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*(?:日|号)?\s*(?:-|~|至|到)\s*(?:(\d{1,2})\s*月\s*)?(\d{1,2})\s*(?:日|号)?/, year: 1, startMonth: 2, startDay: 3, endMonth: 4, endDay: 5 },
+        { regex: /(20\d{2})[./-](\d{1,2})[./-](\d{1,2})\s*(?:-|~|至|到)\s*(?:(\d{1,2})\s*[./-]\s*)?(\d{1,2})(?![\d:])/, year: 1, startMonth: 2, startDay: 3, endMonth: 4, endDay: 5 },
+        { regex: /(?:^|[^\d:])(\d{1,2})\s*[./]\s*(\d{1,2})\s*(?:日|号)?\s*(?:-|至|到)\s*(?:(\d{1,2})\s*(?:月|[./])\s*)?(\d{1,2})\s*(?:日|号)?(?![\d:])/, year: null, startMonth: 1, startDay: 2, endMonth: 3, endDay: 4 }
+      ];
+      for (const pattern of patterns) {
+        const match = text.match(pattern.regex);
+        if (!match) continue;
+        const year = pattern.year && match[pattern.year] ? Number(match[pattern.year]) : CURRENT_EVENT_YEAR;
+        const startMonth = Number(match[pattern.startMonth]);
+        const startDay = Number(match[pattern.startDay]);
+        const endMonthValue = match[pattern.endMonth];
+        const endDayValue = match[pattern.endDay];
+        const endMonth = endMonthValue ? Number(endMonthValue) : startMonth;
+        const endDay = Number(endDayValue);
+        if (!isValidDateParts(year, startMonth, startDay) || !isValidDateParts(year, endMonth, endDay)) continue;
+        let start = `${year}-${String(startMonth).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`;
+        let end = `${year}-${String(endMonth).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
+        if (end < start) [start, end] = [end, start];
+        const matchedText = pattern.year ? match[0] : match[0].replace(/^[^\d]+/, "");
+        return { date: start, endDate: end, matchedText };
+      }
+      return null;
+    }
+
+    function isValidDateParts(year, month, day) {
+      const date = new Date(year, month - 1, day);
+      return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+    }
+
+    function parseStatus(text) {
+      const options = [
+        [/已?确认|confirm/i, "confirmed"],
+        [/已?完成|结束|会后/i, "completed"],
+        [/取消|cancel/i, "cancelled"],
+        [/预定|预约|暂定|hold|tentative/i, "reserved"]
+      ];
+      for (const [pattern, value] of options) {
+        const match = text.match(pattern);
+        if (match) return { value, matchedText: match[0] };
+      }
+      return { value: "reserved", matchedText: "" };
+    }
+
+    function parseInterpretingType(text) {
+      const options = [
+        [/同传|同声传译|\bSI\b/i, "SI"],
+        [/交传|交替传译|\bCI\b/i, "CI"],
+        [/同传.*交传|交传.*同传|SI\s*\+\s*CI/i, "SI + CI"]
+      ];
+      const combined = options[2][0].exec(text);
+      if (combined) return { value: "SI + CI", matchedText: combined[0] };
+      for (const [pattern, value] of options.slice(0, 2)) {
+        const match = text.match(pattern);
+        if (match) return { value, matchedText: match[0] };
+      }
+      return null;
+    }
+
+    function parseDuration(text, dateResult = null) {
+      const timeRange = text.match(/(\d{1,2}[:：]\d{2})\s*[-~至到]\s*(\d{1,2}[:：]\d{2})/);
+      if (timeRange) {
+        return { type: "具体明细", detail: timeRange[0].replace(/：/g, ":"), matchedText: timeRange[0] };
+      }
+      const hours = text.match(/(\d+(?:\.\d+)?)\s*(?:小时|h\b)/i);
+      if (hours) {
+        return { type: "具体明细", detail: hours[0], matchedText: hours[0] };
+      }
+      const half = text.match(/半天|上午|下午|晚间|晚上/);
+      if (half) {
+        return { type: "半天", detail: half[0], matchedText: half[0] };
+      }
+      const full = text.match(/全天|整天|一天/);
+      if (full) {
+        return { type: "全天", detail: "", matchedText: full[0] };
+      }
+      if (dateResult?.endDate && dateResult.endDate !== dateResult.date) {
+        const days = countInclusiveDays(dateResult.date, dateResult.endDate);
+        return { type: "全天", detail: `${days}个全天`, matchedText: "" };
+      }
+      return { type: "全天", detail: "", matchedText: "" };
+    }
+
+    function countInclusiveDays(startDate, endDate) {
+      const start = new Date(`${startDate}T00:00:00`);
+      const end = new Date(`${endDate}T00:00:00`);
+      return Math.max(1, Math.round((end - start) / 86400000) + 1);
+    }
+
+    function parseIndustry(text) {
+      const industryPatterns = [
+        ["医药/医疗器械", /医药|医疗器械|药监|疫苗|制药|临床|医院|医疗|DIA|ISPE/i],
+        ["汽车/新能源", /汽车|新能源|电动车|自动驾驶|电池|主机厂|NEV/i],
+        ["金融/投资", /金融|投资|基金|私募|银行|证券|保险|并购|PE|VC/i],
+        ["科技/互联网", /科技|互联网|AI|人工智能|云|数据|软件|半导体|芯片|Google|Intel|KubeCon/i],
+        ["制造/工业", /制造|工业|供应链|工厂|材料|工程|传感器/i],
+        ["教育/培训", /教育|培训|课程|学校|大学|师训/i],
+        ["法律/合规", /法律|合规|法规|监管|仲裁|诉讼/i],
+        ["政府/国际组织", /政府|使馆|大使|国际组织|联合国|世卫|WHO|论坛/i],
+        ["环保/可持续", /环保|可持续|低碳|绿色|气候|能源|海洋|固废/i]
+      ];
+      for (const [industry, pattern] of industryPatterns) {
+        if (pattern.test(text)) return industry;
+      }
+      return "";
+    }
+
+    function parseLocation(text) {
+      const online = text.match(/线上|Zoom|Teams|腾讯会议|飞书|Webex/i);
+      if (online) return online[0];
+      const venue = text.match(/北京国家会议中心|国家会议中心|上海国家会展中心|国家会展中心/);
+      if (venue) return venue[0];
+      const city = text.match(/北京|上海|广州|深圳|杭州|成都|重庆|天津|南京|苏州|武汉|西安|青岛|厦门|大连|香港|澳门|台北/);
+      if (city) return city[0];
+      const explicit = text.match(/(?:在|地点|地址|线下)\s*([\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,18})/);
+      return explicit ? cleanupToken(explicit[1]) : "";
+    }
+
+    function parseClient(text) {
+      const match = text.match(/(?:客户|机构|主办方|代理)[:： ]\s*([\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24})/);
+      if (match) {
+        const namedClient = cleanupToken(match[1]);
+        return isSelfReference(namedClient) ? "" : namedClient;
+      }
+      const learned = frequentContacts().find(contact => text.includes(contact));
+      if (learned) return learned;
+      const teacher = text.match(/[\u4e00-\u9fa5]{1,4}老师/);
+      if (teacher) {
+        if (isSelfReference(teacher[0])) return "";
+        return teacher[0] === "留底老师" ? "底老师" : teacher[0];
+      }
+      const retainedName = text.match(/留\s*([\u4e00-\u9fa5]{2,4})(?!老师)/);
+      if (retainedName) return retainedName[1];
+      const contact = text.match(/(?:对接人|联系人)[:： ]\s*([\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24})/);
+      if (!contact) return "";
+      const contactName = cleanupToken(contact[1]);
+      return isSelfReference(contactName) ? "" : contactName;
+    }
+
+    function isSelfReference(value) {
+      return SELF_NAME_PATTERN.test(String(value || ""));
+    }
+
+    function parseProjectName(text, removals) {
+      let result = text;
+      removals.filter(Boolean).forEach(item => {
+        result = result.replace(item, " ");
+      });
+      result = result
+        .replace(/客户[:： ]\s*[\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24}/, " ")
+        .replace(/对接人[:： ]\s*[\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24}/, " ")
+        .replace(/联系人[:： ]\s*[\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24}/, " ")
+        .replace(/机构[:： ]\s*[\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24}/, " ")
+        .replace(/主办方[:： ]\s*[\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24}/, " ")
+        .replace(/代理[:： ]\s*[\u4e00-\u9fa5A-Za-z0-9·.\- ]{2,24}/, " ")
+        .replace(/留\s*[\u4e00-\u9fa5]{2,4}(?!老师)/, " ")
+        .replace(SELF_NAME_PATTERN, " ")
+        .replace(/已?确认|已?完成|取消|预定|预约|暂定|同传|同声传译|交传|交替传译|全天|半天|上午|下午|晚上|晚间/g, " ")
+        .replace(/\b(SI|CI|confirm|cancel|hold|tentative)\b/ig, " ")
+        .replace(/[\s,，.。;；、]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return cleanupToken(result);
+    }
+
+    function cleanupToken(text) {
+      return String(text || "")
+        .replace(/^(在|地点|地址|线下|客户|机构|主办方|代理)[:： ]*/g, "")
+        .replace(/^(对接人|联系人)[:： ]*/g, "")
+        .replace(/^[\s,，.。;；、~～-]+|[\s,，.。;；、~～-]+$/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 60);
+    }
+
+    function mergeNotes(existing, addition) {
+      const current = existing.trim();
+      return current ? `${current}\n${addition}` : addition;
+    }
+
+    function toggleVoiceInput() {
+      toggleSpeechInput("quickInput", "voiceInputBtn", "语音输入");
+    }
+
+    function togglePostVoiceInput() {
+      toggleSpeechInput("postNotes", "postVoiceBtn", "语音输入");
+    }
+
+    function toggleSpeechInput(targetId, buttonId, idleText) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showToast("当前浏览器不支持语音识别，可以先用键盘输入。");
+        return;
+      }
+      if (isListening && speechRecognizer) {
+        speechRecognizer.stop();
+        return;
+      }
+      speechRecognizer = new SpeechRecognition();
+      speechRecognizer.lang = "zh-CN";
+      speechRecognizer.interimResults = true;
+      speechRecognizer.continuous = false;
+      speechRecognizer.onstart = () => {
+        isListening = true;
+        $(buttonId).classList.add("voice-active");
+        $(buttonId).textContent = "停止";
+      };
+      speechRecognizer.onend = () => {
+        isListening = false;
+        $(buttonId).classList.remove("voice-active");
+        $(buttonId).textContent = idleText;
+      };
+      speechRecognizer.onerror = () => showToast("语音输入没有成功，可以再试一次或改用键盘。");
+      speechRecognizer.onresult = (event) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          transcript += event.results[i][0].transcript;
+        }
+        const target = $(targetId);
+        const value = transcript.trim();
+        target.value = targetId === "postNotes" && target.value.trim()
+          ? `${target.value.trim()}\n${value}`
+          : value;
+      };
+      speechRecognizer.start();
+    }
+
+    function saveRecord(event) {
+      event.preventDefault();
+      if (activeBatchIndex >= 0) {
+        saveActiveBatchDraft();
+        return;
+      }
+      saveRecordFromForm("记录已保存。");
+    }
+
+    function saveQuickEntry() {
+      if (activeBatchIndex >= 0) {
+        saveActiveBatchDraft();
+        return;
+      }
+      if (pendingBatchRecords.length) {
+        showToast("请先点击一条草稿，检查编辑后再保存。");
+        return;
+      }
+      saveRecordFromForm("记录已保存。");
+    }
+
+    function saveActiveBatchDraft() {
+      const record = buildRecordFromForm(makeId());
+      state.records.push(record);
+      if (record.industry && !state.industries.includes(record.industry)) {
+        state.industries.push(record.industry);
+      }
+      learnFromRecord(record);
+      pendingBatchRecords.splice(activeBatchIndex, 1);
+      const remaining = pendingBatchRecords.length;
+      activeBatchIndex = -1;
+      persist();
+      resetFormFieldsOnly();
+      renderAll();
+      renderBatchPreview();
+      if (remaining) {
+        showToast(`这一条已保存。还剩 ${remaining} 条草稿，请继续点击编辑。`);
+      } else {
+        $("quickInput").value = "";
+        showToast("批量草稿已全部保存。");
+      }
+    }
+
+    function saveRecordFromForm(message = "记录已保存。") {
+      const id = $("recordId").value || makeId();
+      const record = buildRecordFromForm(id);
+      const existing = state.records.find(item => item.id === id);
+      if (existing) {
+        Object.assign(existing, record, {
+          postNotes: existing.postNotes,
+          meetingMinutes: existing.meetingMinutes,
+          knowledgeText: existing.knowledgeText
+        });
+      } else {
+        state.records.push(record);
+      }
+      if (record.industry && !state.industries.includes(record.industry)) {
+        state.industries.push(record.industry);
+      }
+      learnFromRecord(record);
+      persist();
+      $("recordId").value = id;
+      $("formTitle").textContent = "编辑预约";
+      renderAll();
+      showToast(message);
+    }
+
+    function buildRecordFromForm(id) {
+      let startDate = $("eventDate").value;
+      let endDate = $("endDate").value;
+      if (startDate && endDate && endDate < startDate) {
+        [startDate, endDate] = [endDate, startDate];
+      }
+      return normalizeRecord({
+        id,
+        projectName: $("projectName").value.trim(),
+        clientName: $("clientName").value.trim(),
+        industry: $("industry").value.trim(),
+        eventDate: startDate,
+        endDate,
+        durationType: $("durationType").value,
+        durationDetail: $("durationDetail").value.trim(),
+        location: $("location").value.trim(),
+        interpretingType: $("interpretingType").value,
+        status: $("status").value,
+        prepPath: $("prepPath").value.trim(),
+        notes: $("notes").value.trim(),
+        includeInCv: $("includeInCv").checked,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    function editRecord(id) {
+      const record = state.records.find(item => item.id === id);
+      if (!record) return;
+      pendingBatchRecords = [];
+      activeBatchIndex = -1;
+      $("batchPreview").classList.add("hidden");
+      $("batchPreview").innerHTML = "";
+      fillFormFromRecord(record, false);
+      openTab("formPanel");
+      window.scrollTo({ top: document.querySelector("#formPanel").offsetTop, behavior: "smooth" });
+    }
+
+    function fillFormFromRecord(record, asDraft) {
+      $("recordId").value = asDraft ? "" : record.id;
+      $("projectName").value = record.projectName;
+      $("clientName").value = record.clientName;
+      $("industry").value = record.industry;
+      $("eventDate").value = record.eventDate;
+      $("endDate").value = record.endDate;
+      $("durationType").value = record.durationType;
+      $("durationDetail").value = record.durationDetail;
+      $("location").value = record.location;
+      $("interpretingType").value = record.interpretingType;
+      $("status").value = record.status;
+      $("prepPath").value = record.prepPath;
+      $("notes").value = record.notes;
+      $("includeInCv").checked = record.includeInCv;
+      $("formTitle").textContent = asDraft ? "编辑待保存草稿" : "编辑预约";
+      updateStatusHighlight();
+    }
+
+    function resetForm() {
+      resetFormFieldsOnly();
+      pendingBatchRecords = [];
+      activeBatchIndex = -1;
+      $("batchPreview").classList.add("hidden");
+      $("batchPreview").innerHTML = "";
+      $("formTitle").textContent = "安排会议";
+    }
+
+    function resetFormFieldsOnly() {
+      $("recordForm").reset();
+      $("recordId").value = "";
+      $("durationType").value = "全天";
+      $("interpretingType").value = "";
+      $("status").value = "reserved";
+      $("includeInCv").checked = false;
+      $("formTitle").textContent = "安排会议";
+      updateStatusHighlight();
+    }
+
+    function deleteCurrentRecord() {
+      const id = $("recordId").value;
+      if (!id) {
+        showToast("当前没有选中的记录。");
+        return;
+      }
+      const record = state.records.find(item => item.id === id);
+      if (!record) return;
+      const ok = confirm(`删除“${record.projectName || "未命名项目"}”？`);
+      if (!ok) return;
+      state.records = state.records.filter(item => item.id !== id);
+      selectedExportIds.delete(id);
+      persist();
+      resetForm();
+      renderAll();
+      showToast("记录已删除。");
+    }
+
+    function cancelRecord(id) {
+      const record = state.records.find(item => item.id === id);
+      if (!record) return;
+      const ok = confirm(`将“${record.projectName || "未命名项目"}”标记为取消？`);
+      if (!ok) return;
+      record.status = "cancelled";
+      record.updatedAt = new Date().toISOString();
+      persist();
+      renderAll();
+      showToast("会议已取消，并已从日历隐藏。");
+    }
+
+    function hideRecord(id) {
+      const record = state.records.find(item => item.id === id);
+      if (!record) return;
+      record.hidden = true;
+      selectedExportIds.delete(id);
+      record.updatedAt = new Date().toISOString();
+      persist();
+      renderAll();
+      showToast("这条取消记录已不再显示。");
+    }
+
+    function saveBlocker() {
+      const title = $("blockerTitle").value.trim();
+      let startDate = $("blockerDate").value;
+      let endDate = $("blockerEndDate").value;
+      if (!title || !startDate) {
+        showToast("请填写占用事项和开始日期。");
+        return;
+      }
+      if (startDate && endDate && endDate < startDate) {
+        [startDate, endDate] = [endDate, startDate];
+      }
+      state.records.push(normalizeRecord({
+        id: makeId(),
+        recordType: "blocker",
+        projectName: title,
+        eventDate: startDate,
+        endDate,
+        status: "reserved",
+        durationType: "全天",
+        notes: "日程占用标记",
+        updatedAt: new Date().toISOString()
+      }));
+      $("blockerTitle").value = "";
+      $("blockerDate").value = "";
+      $("blockerEndDate").value = "";
+      persist();
+      renderAll();
+      showToast("占用标记已保存到日历。");
+    }
+
+    function deleteBlocker(id) {
+      const record = state.records.find(item => item.id === id && item.recordType === "blocker");
+      if (!record) return;
+      const ok = confirm(`删除占用标记“${record.projectName || "未命名"}”？`);
+      if (!ok) return;
+      state.records = state.records.filter(item => item.id !== id);
+      persist();
+      renderAll();
+      showToast("占用标记已删除。");
+    }
+
+    function openAfter(id) {
+      openTab("afterPanel");
+      $("afterRecordSelect").value = id;
+      fillAfterFields(id);
+      renderFollowupCards();
+      window.scrollTo({ top: document.querySelector("#afterPanel").offsetTop, behavior: "smooth" });
+    }
+
+    function fillAfterFields(id) {
+      const record = state.records.find(item => item.id === id);
+      $("postNotes").value = record?.postNotes || "";
+      $("meetingMinutes").value = record?.meetingMinutes || "";
+      $("knowledgeText").value = record?.knowledgeText || "";
+    }
+
+    function generateMinutes() {
+      const id = $("afterRecordSelect").value;
+      const record = state.records.find(item => item.id === id);
+      if (!record) {
+        showToast("请先选择一场会议。");
+        return;
+      }
+      const notes = $("postNotes").value.trim();
+      const points = extractPoints(notes);
+      const pointText = points.length ? points.map(item => `- ${item}`).join("\n") : "- 待补充会议重点";
+      const minutes = [
+        `会议纪要｜${record.projectName || "未命名项目"}`,
+        `行业：${record.industry || "未分类"}`,
+        `时间：${formatDateRange(record)}｜${durationText(record) || "时长待补充"}`,
+        `客户/对接人：${record.clientName || "待补充"}`,
+        `地点/形式：${record.location || "待补充"}`,
+        `口译类型：${record.interpretingType || "待确认"}`,
+        "",
+        "会议重点：",
+        pointText,
+        "",
+        "后续整理：",
+        "- 更新工作记录",
+        "- 提炼术语和背景知识",
+        record.includeInCv ? "- 标记为可加入简历案例" : "- 暂不加入简历"
+      ].join("\n");
+      const knowledge = [
+        `资料库条目｜${record.projectName || "未命名项目"}`,
+        `行业标签：${record.industry || "未分类"}`,
+        `日期：${formatDateRange(record)}`,
+        "",
+        "术语/表达：",
+        points.slice(0, 8).map(item => `- ${item}`).join("\n") || "- 待补充术语",
+        "",
+        "背景知识：",
+        "- 待补充行业背景、机构信息、议程结构",
+        "",
+        "相关资料路径：",
+        record.prepPath || "- 待补充"
+      ].join("\n");
+      $("meetingMinutes").value = minutes;
+      $("knowledgeText").value = knowledge;
+      if (record.status !== "cancelled") {
+        record.status = "completed";
+      }
+      record.includeInCv = true;
+      saveAfterContent(false);
+      showToast("已按模板整理，并标记为已完成。");
+    }
+
+    function extractPoints(text) {
+      return text
+        .split(/\n|。|；|;|\u2022|-/)
+        .map(item => item.trim())
+        .filter(item => item.length >= 2)
+        .slice(0, 12);
+    }
+
+    function saveAfterContent(showMessage = true) {
+      const id = $("afterRecordSelect").value;
+      const record = state.records.find(item => item.id === id);
+      if (!record) return;
+      record.postNotes = $("postNotes").value.trim();
+      record.meetingMinutes = $("meetingMinutes").value.trim();
+      record.knowledgeText = $("knowledgeText").value.trim();
+      record.updatedAt = new Date().toISOString();
+      persist();
+      renderAll();
+      $("afterRecordSelect").value = id;
+      fillAfterFields(id);
+      renderFollowupCards();
+      if (showMessage) showToast("会后内容已保存。");
+    }
+
+    function exportJson() {
+      const payload = JSON.stringify({ ...state, exportedAt: new Date().toISOString() }, null, 2);
+      downloadFile(`interpreter-schedule-data-${fileTimestamp()}.json`, payload, "application/json;charset=utf-8");
+      showToast(`数据文件已保存：${state.records.length} 条记录。`);
+    }
+
+    function importJson(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = normalizeState(JSON.parse(reader.result));
+          if (!imported.records.length) {
+            showToast("导入文件里没有识别到会议记录，已保留当前数据。");
+            $("jsonFileInput").value = "";
+            return;
+          }
+          const ok = !state.records.length || confirm(`导入文件包含 ${imported.records.length} 条记录。是否用它替换当前 ${state.records.length} 条记录？`);
+          if (!ok) {
+            $("jsonFileInput").value = "";
+            return;
+          }
+          state = imported;
+          persist();
+          resetForm();
+          renderAll();
+          $("jsonFileInput").value = "";
+          showToast(`已导入 ${state.records.length} 条会议记录。`);
+        } catch {
+          $("jsonFileInput").value = "";
+          showToast("导入失败：文件格式不是有效 JSON，当前数据已保留。");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function importIcs(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const records = parseIcsRecords(reader.result)
+            .filter(record => record.eventDate >= "2026-05-01" && record.eventDate <= "2026-12-24");
+          if (!records.length) {
+            $("icsFileInput").value = "";
+            showToast("这个日历文件里没有 2026-05-01 到 2026-12-24 的事件。");
+            return;
+          }
+          const existingIds = new Set(state.records.map(record => record.id));
+          let added = 0;
+          let updated = 0;
+          records.forEach(record => {
+            const index = state.records.findIndex(item => item.id === record.id);
+            if (index >= 0) {
+              state.records[index] = { ...state.records[index], ...record, updatedAt: new Date().toISOString() };
+              updated += 1;
+            } else if (!existingIds.has(record.id)) {
+              state.records.push(record);
+              existingIds.add(record.id);
+              added += 1;
+            }
+          });
+          persist();
+          resetForm();
+          renderAll();
+          $("icsFileInput").value = "";
+          showToast(`日历导入完成：新增 ${added} 条，更新 ${updated} 条。`);
+        } catch {
+          $("icsFileInput").value = "";
+          showToast("日历文件导入失败，请确认是 .ics 文件。");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function parseIcsRecords(content) {
+      const lines = unfoldIcsLines(content);
+      const events = [];
+      let current = null;
+      lines.forEach(line => {
+        if (line === "BEGIN:VEVENT") {
+          current = {};
+          return;
+        }
+        if (line === "END:VEVENT") {
+          if (current) events.push(current);
+          current = null;
+          return;
+        }
+        if (!current) return;
+        const colonIndex = line.indexOf(":");
+        if (colonIndex < 0) return;
+        const rawKey = line.slice(0, colonIndex);
+        const key = rawKey.split(";")[0].toUpperCase();
+        const value = line.slice(colonIndex + 1);
+        current[key] = value;
+        if (key === "DTSTART") current._dtstartKey = rawKey;
+        if (key === "DTEND") current._dtendKey = rawKey;
+      });
+      return events.map(event => eventToRecord(event)).filter(Boolean);
+    }
+
+    function unfoldIcsLines(content) {
+      return String(content || "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .split("\n")
+        .reduce((lines, line) => {
+          if (/^[ \t]/.test(line) && lines.length) {
+            lines[lines.length - 1] += line.slice(1);
+          } else {
+            lines.push(line.trimEnd());
+          }
+          return lines;
+        }, []);
+    }
+
+    function eventToRecord(event) {
+      const start = parseIcsDate(event.DTSTART || "", event._dtstartKey || "");
+      if (!start) return null;
+      const end = parseIcsDate(event.DTEND || "", event._dtendKey || "");
+      let endDate = "";
+      if (end) {
+        endDate = start.allDay ? addDays(end.date, -1) : end.date;
+        if (endDate === start.date) endDate = "";
+      }
+      const summary = icsUnescape(event.SUMMARY || "口译预约");
+      const location = icsUnescape(event.LOCATION || "");
+      const description = icsUnescape(event.DESCRIPTION || "");
+      const combined = `${summary} ${location} ${description}`;
+      return normalizeRecord({
+        id: `calendar-${event.UID || hashText(`${summary}|${start.date}|${location}`)}`,
+        projectName: summary,
+        clientName: parseClient(combined),
+        industry: parseIndustry(combined),
+        eventDate: start.date,
+        endDate,
+        durationType: "全天",
+        durationDetail: endDate ? `${countInclusiveDays(start.date, endDate)}个全天` : "",
+        location,
+        interpretingType: "",
+        status: "reserved",
+        notes: ["从 macOS 日历导入", description].filter(Boolean).join("\n"),
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    function parseIcsDate(value, key) {
+      const text = String(value || "");
+      const match = text.match(/^(\d{4})(\d{2})(\d{2})/);
+      if (!match) return null;
+      return {
+        date: `${match[1]}-${match[2]}-${match[3]}`,
+        allDay: /VALUE=DATE/i.test(key) || /^\d{8}$/.test(text)
+      };
+    }
+
+    function icsUnescape(value) {
+      return String(value || "")
+        .replace(/\\n/gi, "\n")
+        .replace(/\\,/g, ",")
+        .replace(/\\;/g, ";")
+        .replace(/\\\\/g, "\\");
+    }
+
+    function hashText(text) {
+      let hash = 0;
+      String(text || "").split("").forEach(char => {
+        hash = ((hash << 5) - hash) + char.charCodeAt(0);
+        hash |= 0;
+      });
+      return Math.abs(hash).toString(36);
+    }
+
+    function exportCsv() {
+      const headers = [
+        "大会/项目名称", "客户/对接人", "行业", "开始日期", "结束日期", "时长类型", "具体明细",
+        "地点/线上", "口译类型", "状态", "备注", "备会资料路径", "会议纪要",
+        "个人资料库条目", "建议加入简历"
+      ];
+      const rows = visibleMeetingRecords().sort(compareRecords).map(record => [
+        record.projectName,
+        record.clientName,
+        record.industry,
+        record.eventDate,
+        record.endDate,
+        record.durationType,
+        record.durationDetail,
+        record.location,
+        record.interpretingType,
+        STATUS_LABELS[record.status],
+        record.notes,
+        record.prepPath,
+        record.meetingMinutes,
+        record.knowledgeText,
+        record.includeInCv ? "是" : "否"
+      ]);
+      const csv = "\ufeff" + [headers, ...rows].map(row => row.map(csvCell).join(",")).join("\n");
+      downloadFile("interpreter-work-records.csv", csv, "text/csv;charset=utf-8");
+      showToast("CSV 已导出。");
+    }
+
+    function exportSelectedWorkRecords() {
+      const selectedRecords = visibleRecords()
+        .filter(record => selectedExportIds.has(record.id))
+        .filter(record => record.recordType !== "blocker")
+        .sort(compareRecords);
+      if (!selectedRecords.length) {
+        showToast("请先在右侧列表勾选要导出的会议。");
+        return;
+      }
+      const headers = ["日期", "项目", "时长", "口译类型", "行业", "地点/线上", "客户/对接人", "状态", "备注"];
+      const title = `口译工作记录_${fileTimestamp()}`;
+      const rows = selectedRecords.map(record => [
+        formatWorkRecordDate(record),
+        record.projectName || "未命名项目",
+        workRecordDuration(record),
+        record.interpretingType || "待补充",
+        record.industry || "",
+        record.location || "",
+        record.clientName || "",
+        STATUS_LABELS[record.status] || record.status,
+        [record.notes, record.meetingMinutes].filter(Boolean).join("\n")
+      ]);
+      const html = buildExcelHtml(title, headers, rows);
+      downloadFile(`ivy-work-records-${fileTimestamp()}.xls`, html, "application/vnd.ms-excel;charset=utf-8");
+      showToast(`已导出 ${selectedRecords.length} 条工作记录。`);
+    }
+
+    function buildExcelHtml(title, headers, rows) {
+      const widths = [26, 34, 24, 14, 18, 18, 18, 12, 42];
+      const colgroup = widths.map(width => `<col style="width:${width}ch">`).join("");
+      const headerHtml = headers.map(header => `<th>${excelCell(header)}</th>`).join("");
+      const rowsHtml = rows.map(row => `<tr>${row.map(cell => `<td>${excelCell(cell)}</td>`).join("")}</tr>`).join("");
+      return `\ufeff<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8">
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>工作记录</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  <style>
+    body { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; color: #1f2a32; }
+    table { border-collapse: collapse; table-layout: fixed; }
+    th, td { border: 1px solid #cfd8df; padding: 8px 10px; font-size: 11pt; vertical-align: top; mso-number-format: "\\@"; white-space: normal; }
+    th { background: #dfeef7; color: #173b57; font-weight: 700; text-align: center; }
+    .title { background: #f6f1e5; color: #173b57; font-family: Georgia, "Songti SC", serif; font-size: 18pt; font-weight: 700; text-align: left; }
+    tr:nth-child(even) td { background: #fbfdff; }
+  </style>
+</head>
+<body>
+  <table>
+    ${colgroup}
+    <tr><td class="title" colspan="${headers.length}">${excelCell(title)}</td></tr>
+    <tr>${headerHtml}</tr>
+    ${rowsHtml}
+  </table>
+</body>
+</html>`;
+    }
+
+    function excelCell(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/\n/g, "<br>");
+    }
+
+    function formatWorkRecordDate(record) {
+      if (!record.eventDate) return "日期待补充";
+      const start = parseDateParts(record.eventDate);
+      const end = parseDateParts(record.endDate);
+      if (!end || record.endDate === record.eventDate) return `${start.year}年${start.month}月${start.day}日`;
+      if (start.year === end.year && start.month === end.month) {
+        return `${start.year}年${start.month}月${start.day}-${end.day}日`;
+      }
+      if (start.year === end.year) {
+        return `${start.year}年${start.month}月${start.day}日-${end.month}月${end.day}日`;
+      }
+      return `${start.year}年${start.month}月${start.day}日-${end.year}年${end.month}月${end.day}日`;
+    }
+
+    function parseDateParts(dateString) {
+      if (!dateString) return null;
+      const [year, month, day] = dateString.split("-").map(Number);
+      return { year, month, day };
+    }
+
+    function workRecordDuration(record) {
+      if (record.durationDetail) return record.durationDetail;
+      if (!record.eventDate) return record.durationType || "";
+      const days = countInclusiveDays(record.eventDate, record.endDate || record.eventDate);
+      if (record.durationType === "全天") return `${days}全天`;
+      if (record.durationType === "半天") return `${days}半天`;
+      return record.durationType || "";
+    }
+
+    function copyMeetingList() {
+      const filter = $("listFilter").value;
+      const statuses = copyStatusesForFilter(filter);
+      const currentListRecords = visibleMeetingRecords()
+        .filter(record => filter === "all" || statuses.includes(record.status))
+        .sort(compareRecords);
+      const selectedRecords = currentListRecords
+        .filter(record => selectedExportIds.has(record.id));
+      const records = selectedRecords.length ? selectedRecords : currentListRecords;
+      if (!records.length) {
+        showToast("当前列表没有可复制的会议。");
+        return;
+      }
+      const text = records.map(record => {
+        const pieces = [
+          `日期：${formatDateRange(record)}`,
+          `会议：${record.projectName || "未命名项目"}`
+        ];
+        if (record.location) pieces.push(`地点：${record.location}`);
+        if (record.industry) pieces.push(`主题：${record.industry}`);
+        if (record.clientName) pieces.push(`客户/对接人：${record.clientName}`);
+        return pieces.join("｜");
+      }).join("\n");
+      const message = selectedRecords.length
+        ? `已复制选中的 ${selectedRecords.length} 条会议。`
+        : `未勾选会议，已复制当前列表的 ${currentListRecords.length} 条会议。`;
+      copyText(text, message);
+    }
+
+    function copyStatusesForFilter(filter) {
+      if (filter === "active" || filter === "reserved" || filter === "confirmed") {
+        return ["reserved", "confirmed"];
+      }
+      return [filter];
+    }
+
+    function exportIcs() {
+      const records = visibleMeetingRecords()
+        .filter(record => record.status !== "cancelled")
+        .filter(record => record.eventDate)
+        .sort(compareRecords);
+      if (!records.length) {
+        showToast("没有可导出的已排期会议。");
+        return;
+      }
+      const lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Ivy Interpreter Schedule//CN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH"
+      ];
+      records.forEach(record => {
+        const start = compactDate(record.eventDate);
+        const end = compactDate(addDays(record.endDate || record.eventDate, 1));
+        const description = [
+          record.industry ? `主题：${record.industry}` : "",
+          record.clientName ? `客户/对接人：${record.clientName}` : "",
+          record.interpretingType ? `口译类型：${record.interpretingType}` : "",
+          durationText(record) ? `时长：${durationText(record)}` : "",
+          record.notes ? `备注：${record.notes}` : ""
+        ].filter(Boolean).join("\\n");
+        lines.push(
+          "BEGIN:VEVENT",
+          `UID:${icsEscape(record.id)}@ivy-interpreter-schedule`,
+          `DTSTAMP:${icsTimestamp(new Date())}`,
+          `DTSTART;VALUE=DATE:${start}`,
+          `DTEND;VALUE=DATE:${end}`,
+          `SUMMARY:${icsEscape(record.projectName || "口译预约")}`,
+          record.location ? `LOCATION:${icsEscape(record.location)}` : "",
+          description ? `DESCRIPTION:${icsEscape(description)}` : "",
+          "END:VEVENT"
+        );
+      });
+      lines.push("END:VCALENDAR");
+      const ics = lines.filter(Boolean).join("\r\n");
+      downloadFile(`ivy-interpreter-calendar-${fileTimestamp()}.ics`, ics, "text/calendar;charset=utf-8");
+      showToast("已导出 ICS 日历文件。");
+    }
+
+    function fileTimestamp() {
+      const now = new Date();
+      return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    }
+
+    function addDays(dateString, days) {
+      const date = new Date(`${dateString}T00:00:00`);
+      date.setDate(date.getDate() + days);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+
+    function compactDate(dateString) {
+      return String(dateString || "").replaceAll("-", "");
+    }
+
+    function icsTimestamp(date) {
+      return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    }
+
+    function icsEscape(value) {
+      return String(value ?? "")
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/,/g, "\\,")
+        .replace(/;/g, "\\;");
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "");
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function saveSettings() {
+      state.settings = {
+        knowledgePath: $("knowledgePath").value.trim(),
+        bilingualPath: $("bilingualPath").value.trim(),
+        cvPath: $("cvPath").value.trim()
+      };
+      persist();
+      renderSettings();
+      showToast("链接已保存。");
+    }
+
+    function renderCloudAuth() {
+      const signedIn = Boolean(cloudUser);
+      $("cloudLoginFields").classList.toggle("hidden", signedIn);
+      $("cloudSignedInActions").classList.toggle("hidden", !signedIn);
+      $("cloudAuthStatus").textContent = signedIn
+        ? `已连接：${cloudUser.email || "个人账号"}。${cloudSyncStatus}`
+        : "尚未登录。登录后可以使用安全的双向同步。";
+      const compactTitle = $("cloudCompactTitle");
+      const compactStatus = $("cloudCompactStatus");
+      const compactButton = $("compactSyncBtn");
+      if (compactTitle && compactStatus && compactButton) {
+        const syncing = signedIn && cloudSyncStatus.startsWith("正在");
+        compactTitle.textContent = signedIn ? "云端已连接" : "云端尚未连接";
+        compactStatus.textContent = signedIn ? cloudSyncStatus : "请在设置中登录云端账号";
+        compactButton.textContent = syncing ? "同步中……" : signedIn ? "立即同步" : "前往设置";
+        compactButton.disabled = syncing;
+      }
+    }
+
+    async function initCloudAuth() {
+      const config = window.XIAORICHANG_SUPABASE;
+      if (!window.supabase?.createClient || !config?.url || !config?.publishableKey) {
+        $("cloudAuthStatus").textContent = "云端连接组件未能加载，请确认网络连接后刷新。";
+        return;
+      }
+      supabaseClient = window.supabase.createClient(config.url, config.publishableKey, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+      });
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        $("cloudAuthStatus").textContent = `连接检查失败：${error.message}`;
+        return;
+      }
+      cloudUser = data.session?.user || null;
+      renderCloudAuth();
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        cloudUser = session?.user || null;
+        renderCloudAuth();
+      });
+    }
+
+    async function signInCloud() {
+      if (!supabaseClient) return showToast("云端连接尚未准备好，请刷新后重试。");
+      const email = $("cloudEmail").value.trim();
+      const password = $("cloudPassword").value;
+      if (!email || !password) return showToast("请填写登录邮箱和密码。");
+      const button = $("cloudLoginBtn");
+      button.disabled = true;
+      button.textContent = "正在登录……";
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      button.disabled = false;
+      button.textContent = "登录云端";
+      $("cloudPassword").value = "";
+      if (error) return showToast(`登录失败：${error.message}`);
+      cloudUser = data.user;
+      renderCloudAuth();
+      showToast("云端账号登录成功。");
+    }
+
+    function formatCloudSyncTime(value) {
+      if (!value) return "刚刚";
+      return new Date(value).toLocaleString("zh-CN", { hour12: false });
+    }
+
+    async function runCloudSync() {
+      if (!supabaseClient || !cloudUser) return showToast("请先登录云端账号。");
+      if (!window.XiaorichangCloudSync?.sync) return showToast("同步组件尚未准备好，请刷新后重试。");
+      const button = $("syncNowBtn");
+      const compactButton = $("compactSyncBtn");
+      button.disabled = true;
+      button.textContent = "正在同步……";
+      if (compactButton) {
+        compactButton.disabled = true;
+        compactButton.textContent = "同步中……";
+      }
+      cloudSyncStatus = "正在比较本机与云端数据……";
+      renderCloudAuth();
+      try {
+        const result = await window.XiaorichangCloudSync.sync({
+          client: supabaseClient,
+          userId: cloudUser.id,
+          scope: "desktop",
+          localState: state,
+          normalizeRemote: normalizeState,
+          backupLocal: snapshot => writeLocalBackup(JSON.stringify({ ...snapshot, savedAt: new Date().toISOString() })),
+          replaceLocal: remoteState => {
+            state = normalizeState(window.XiaorichangCloudSync.mergeSharedState(state, remoteState));
+            persist();
+            resetForm();
+            renderAll();
+          }
+        });
+        const count = state.records.length;
+        if (result.status === "uploaded") cloudSyncStatus = `已上传 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else if (result.status === "downloaded") cloudSyncStatus = `已下载 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else if (result.status === "current") cloudSyncStatus = `已是最新状态 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else cloudSyncStatus = "检测到本机和云端都有修改，已暂停同步，未覆盖任何数据。";
+        renderCloudAuth();
+        showToast(result.status === "conflict" ? "发现同步冲突，未覆盖任何数据。" : cloudSyncStatus);
+      } catch (error) {
+        cloudSyncStatus = `同步失败：${error.message || "未知错误"}`;
+        renderCloudAuth();
+        showToast(cloudSyncStatus);
+      } finally {
+        button.disabled = false;
+        button.textContent = "立即同步";
+        if (compactButton) {
+          compactButton.disabled = false;
+          compactButton.textContent = "立即同步";
+        }
+      }
+    }
+
+    async function signOutCloud() {
+      if (!supabaseClient) return;
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) return showToast(`退出失败：${error.message}`);
+      cloudUser = null;
+      cloudSyncStatus = "登录后点击“立即同步”检查状态。";
+      renderCloudAuth();
+      showToast("已退出云端账号。");
+    }
+
+    function copyText(text, message) {
+      if (!text.trim()) {
+        showToast("没有可复制的内容。");
+        return;
+      }
+      navigator.clipboard.writeText(text).then(
+        () => showToast(message),
+        () => showToast("复制失败，请手动选择文本复制。")
+      );
+    }
+
+    const headerBanners = {
+      formPanel: {
+        src: "assets/desktop-banners/home-business-trip-2000x480.jpg",
+        alt: "口译员在机场准备商务出行的插画"
+      },
+      statsPanel: {
+        src: "assets/desktop-banners/stats-conference-2000x480.jpg",
+        alt: "口译员在会议现场工作的插画"
+      },
+      afterPanel: {
+        src: "assets/desktop-banners/after-study-2000x480.jpg",
+        alt: "口译员在书桌前学习和整理会议资料的插画"
+      },
+      cvPanel: {
+        src: "assets/desktop-banners/cv-resume-2000x480.jpg",
+        alt: "口译员展示资质证书与作品集的插画"
+      },
+      accountingPanel: {
+        src: "assets/desktop-banners/accounting-bookkeeping-2000x480.jpg",
+        alt: "口译员整理差旅费用和票据的插画"
+      },
+      settingsPanel: {
+        src: "assets/desktop-banners/settings-sync-2000x480.jpg",
+        alt: "口译员在电脑和移动设备之间同步数据的插画"
+      }
+    };
+
+    function updateHeaderBanner(panelId) {
+      const image = $("headerBannerImage");
+      const banner = headerBanners[panelId] || headerBanners.formPanel;
+      if (image.dataset.panel !== panelId) {
+        image.src = banner.src;
+        image.alt = banner.alt;
+        image.dataset.panel = panelId;
+      }
+    }
+
+    function renderExpenseScheduleOptions() {
+      const select = $("expenseScheduleSelect");
+      if (!select) return;
+      const selected = select.value;
+      select.innerHTML = '<option value="">暂不关联日程</option>';
+      visibleRecords()
+        .slice()
+        .sort((a, b) => String(b.eventDate || "").localeCompare(String(a.eventDate || "")))
+        .forEach(record => {
+          const option = document.createElement("option");
+          option.value = record.id;
+          option.textContent = `${record.eventDate || "日期未定"} · ${record.projectName || "未命名日程"}`;
+          select.appendChild(option);
+        });
+      if ([...select.options].some(option => option.value === selected)) select.value = selected;
+    }
+
+    function openTab(panelId) {
+      document.body.dataset.activePanel = panelId;
+      updateHeaderBanner(panelId);
+      document.querySelectorAll("[id$='Panel']").forEach(panel => {
+        panel.classList.toggle("hidden", panel.id !== panelId);
+      });
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.tab === panelId);
+      });
+      if (panelId === "cvPanel") renderCvSuggestions();
+      if (panelId === "accountingPanel") {
+        renderExpenseScheduleOptions();
+        if (!$("expenseDate").value) $("expenseDate").value = todayString();
+      }
+      if (panelId === "statsPanel") {
+        renderStats();
+        renderList();
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function bindEvents() {
+      $("recordForm").addEventListener("submit", saveRecord);
+      $("parseQuickBtn").addEventListener("click", parseQuickEntry);
+      $("quickSaveBtn").addEventListener("click", saveQuickEntry);
+      $("voiceInputBtn").addEventListener("click", toggleVoiceInput);
+      $("quickInput").addEventListener("keydown", event => {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+          parseQuickEntry();
+        }
+      });
+      $("status").addEventListener("change", updateStatusHighlight);
+      $("resetFormBtn").addEventListener("click", resetForm);
+      $("deleteRecordBtn").addEventListener("click", deleteCurrentRecord);
+      $("prevMonthBtn").addEventListener("click", () => {
+        viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1);
+        renderCalendar();
+        renderStats();
+      });
+      $("nextMonthBtn").addEventListener("click", () => {
+        viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
+        renderCalendar();
+        renderStats();
+      });
+      $("listFilter").addEventListener("change", renderList);
+      $("exportJsonBtn").addEventListener("click", exportJson);
+      $("importJsonBtn").addEventListener("click", () => $("jsonFileInput").click());
+      $("importIcsBtn").addEventListener("click", () => $("icsFileInput").click());
+      $("jsonFileInput").addEventListener("change", event => importJson(event.target.files[0]));
+      $("icsFileInput").addEventListener("change", event => importIcs(event.target.files[0]));
+      $("exportIcsBtn").addEventListener("click", exportIcs);
+      $("copyListBtn").addEventListener("click", copyMeetingList);
+      $("exportWorkRecordsBtn").addEventListener("click", exportSelectedWorkRecords);
+      $("saveBlockerBtn").addEventListener("click", saveBlocker);
+      $("afterRecordSelect").addEventListener("change", event => {
+        fillAfterFields(event.target.value);
+        renderFollowupCards();
+      });
+      $("generateMinutesBtn").addEventListener("click", generateMinutes);
+      $("postVoiceBtn").addEventListener("click", togglePostVoiceInput);
+      $("saveAfterBtn").addEventListener("click", () => saveAfterContent(true));
+      $("copyAfterBtn").addEventListener("click", () => copyText($("meetingMinutes").value, "纪要已复制。"));
+      $("copyCvBtn").addEventListener("click", () => copyText($("cvSuggestions").textContent, "简历建议已复制。"));
+      $("saveExpensePreviewBtn").addEventListener("click", () => {
+        showToast("差旅费用页面已完成示意，保存与统计逻辑将在下一步接入。");
+      });
+      $("saveSettingsBtn").addEventListener("click", saveSettings);
+      $("cloudLoginBtn").addEventListener("click", signInCloud);
+      $("syncNowBtn").addEventListener("click", runCloudSync);
+      $("cloudLogoutBtn").addEventListener("click", signOutCloud);
+      $("compactSyncBtn").addEventListener("click", () => {
+        if (cloudUser) {
+          runCloudSync();
+        } else {
+          openTab("settingsPanel");
+          $("schedulerCard").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+      $("headerNewBtn").addEventListener("click", () => {
+        openTab("formPanel");
+        resetForm();
+        $("schedulerCard").scrollIntoView({ behavior: "smooth", block: "start" });
+        window.setTimeout(() => $("quickInput").focus(), 260);
+      });
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.addEventListener("click", () => openTab(tab.dataset.tab));
+      });
+      document.querySelectorAll("[data-planned]").forEach(button => {
+        button.addEventListener("click", () => showToast(`${button.dataset.planned}功能正在规划中。`));
+      });
+      document.addEventListener("click", event => {
+        const mini = event.target.closest("[data-mini]");
+        if (mini) editRecord(mini.dataset.mini);
+      });
+    }
+
+    bindEvents();
+    renderAll();
+    initCloudAuth();
+  </script>
+</body>
+</html>

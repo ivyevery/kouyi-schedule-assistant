@@ -1,0 +1,55 @@
+:root {
+  color-scheme: light;
+
+  --xrc-bg-page: #fff5f2;
+  --xrc-surface: #fffaf7;
+  --xrc-surface-strong: #fffdfb;
+  --xrc-ink-primary: #3f3734;
+  --xrc-ink-secondary: #847773;
+  --xrc-line: #eaded9;
+
+  --xrc-theme: #f2762e;
+  --xrc-theme-soft: #fff0e7;
+  --xrc-theme-script: #d95b2b;
+
+  --xrc-status-reserved: #f5b14d;
+  --xrc-status-reserved-soft: #faead6;
+  --xrc-status-confirmed: #8fc9e9;
+  --xrc-status-confirmed-soft: #e4f2f8;
+  --xrc-status-completed: #8dbb91;
+  --xrc-status-completed-soft: #e7f0e5;
+  --xrc-status-cancelled: #aaa19e;
+  --xrc-blocker: #b184c7;
+  --xrc-blocker-soft: #f5efff;
+  --xrc-blocker-ink: #704d7d;
+
+  --xrc-font-display:
+    "Source Han Serif SC",
+    "Noto Serif CJK SC",
+    "思源宋体",
+    "Songti SC",
+    "STSong",
+    serif;
+  --xrc-font-ui:
+    "Source Han Sans SC",
+    "Noto Sans CJK SC",
+    "思源黑体",
+    "PingFang SC",
+    system-ui,
+    sans-serif;
+
+  --xrc-space-1: 4px;
+  --xrc-space-2: 8px;
+  --xrc-space-3: 12px;
+  --xrc-space-4: 16px;
+  --xrc-space-5: 20px;
+  --xrc-space-6: 24px;
+
+  --xrc-radius-input: 13px;
+  --xrc-radius-card: 20px;
+  --xrc-radius-nav: 22px;
+  --xrc-radius-pill: 999px;
+
+  --xrc-shadow-soft: 0 14px 34px rgb(122 75 52 / 8%);
+  --xrc-page-max-mobile: 520px;
+}
