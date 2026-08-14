@@ -455,6 +455,13 @@
     }
 
     /* 小日常 UI 视觉语言 V1.0 */
+    @font-face {
+      font-family: "Kouyi Script";
+      src: url("assets/fonts/lobster/lobster-latin.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
     :root {
       color-scheme: light;
       --bg: #fff5f2;
@@ -592,8 +599,8 @@
 
     body[data-view="homeView"] .topbar {
       display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 104px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
       gap: 10px;
       padding-top: 18px;
       overflow: visible;
@@ -604,38 +611,46 @@
       grid-row: 1;
       position: relative;
       width: max-content;
-      padding: 0 0 4px 1px;
-      font-family: "Snell Roundhand", "Brush Script MT", "Segoe Script", "Bradley Hand", cursive;
+      padding: 0 0 7px 1px;
+      font-family: "Kouyi Script", "Snell Roundhand", "Brush Script MT", cursive;
       color: var(--accent-script);
-      font-size: 35px;
-      font-weight: 600;
-      line-height: 1.18;
-      letter-spacing: .01em;
+      font-size: 48px;
+      font-weight: 400;
+      line-height: 1.16;
+      letter-spacing: -.02em;
     }
     body[data-view="homeView"] .save-state {
-      grid-column: 1;
-      grid-row: 2;
+      grid-column: 2;
+      grid-row: 1;
       align-self: center;
       position: relative;
       z-index: 2;
-      margin: 5px 0 0 78px;
+      margin: 0;
       color: var(--ink);
-      font-family: var(--font-display);
-      font-size: 29px;
-      font-weight: 700;
-      letter-spacing: -.025em;
+      font-family: var(--font-ui);
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -.02em;
     }
     body[data-view="homeView"] .home-art {
-      grid-column: 1;
+      grid-column: 1 / -1;
       grid-row: 2;
-      align-self: center;
-      justify-self: start;
+      align-self: stretch;
+      justify-self: stretch;
       z-index: 1;
-      width: 132px;
-      height: 112px;
-      margin: 2px 0 0 -24px;
-      opacity: .94;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 370 / 165;
+      margin: 0;
+      overflow: hidden;
+      border-radius: 20px;
+      opacity: 1;
       pointer-events: none;
+    }
+    body[data-view="homeView"] .home-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     body[data-view="homeView"] .week-wheel-head {
       justify-content: flex-end;
@@ -768,13 +783,13 @@
     }
     .section-label {
       margin-top: 5px;
-      padding-bottom: 4px;
+      padding: 0 0 7px 1px;
       color: var(--accent-script);
-      font-family: "Snell Roundhand", "Brush Script MT", "Segoe Script", "Bradley Hand", cursive;
-      font-size: 35px;
-      font-weight: 600;
-      line-height: 1.18;
-      letter-spacing: .01em;
+      font-family: "Kouyi Script", "Snell Roundhand", "Brush Script MT", cursive;
+      font-size: 48px;
+      font-weight: 400;
+      line-height: 1.16;
+      letter-spacing: -.02em;
     }
     .section-label::after {
       display: none;
@@ -1196,8 +1211,9 @@
       .app { padding-left: 14px; padding-right: 14px; }
       .week-strip { gap: 2px; }
       .week-number { width: 39px; height: 39px; font-size: 21px; }
-      body[data-view="homeView"] .save-state { margin-left: 70px; font-size: 27px; }
-      body[data-view="homeView"] .home-art { width: 122px; height: 104px; }
+      body[data-view="homeView"] .brand h1 { font-size: 44px; }
+      body[data-view="homeView"] .save-state { font-size: 20px; }
+      .section-label { font-size: 44px; }
       .add-illustration { right: -36px; width: 185px; }
       .settings-hero img { width: 155px; }
     }
@@ -1211,7 +1227,7 @@
         <p class="save-state" id="pageSubtitle"></p>
       </div>
       <div class="home-art" id="homeArt" aria-hidden="true">
-        <img src="assets/illustrations/home-calendar-sun.png" alt="">
+        <img src="assets/mobile-banners/home-conference-740x330.jpg" alt="">
       </div>
       <button class="today-btn hidden" id="todayBtn" type="button">回到今天</button>
     </header>
@@ -1232,7 +1248,7 @@
         </div>
         <div class="selected-day-list" id="selectedDayList"></div>
       </div>
-      <h2 class="section-label">Upcoming...</h2>
+      <h2 class="section-label">Upcoming</h2>
       <div class="upcoming-list" id="upcomingList"></div>
     </section>
 

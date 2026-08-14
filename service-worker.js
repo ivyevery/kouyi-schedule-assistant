@@ -1,4 +1,4 @@
-const CACHE_NAME = "interpreter-assistant-v2";
+const CACHE_NAME = "interpreter-assistant-v3";
 const APP_SHELL = [
   "./",
   "./mobile-schedule.html",
@@ -12,6 +12,8 @@ const APP_SHELL = [
   "./assets/illustrations/home-calendar-sun.png",
   "./assets/illustrations/smart-entry.png",
   "./assets/illustrations/settings-sync-decoration.png",
+  "./assets/mobile-banners/home-conference-740x330.jpg",
+  "./assets/fonts/lobster/lobster-latin.woff2",
   "./assets/mobile-icons/home.png",
   "./assets/mobile-icons/calendar.png",
   "./assets/mobile-icons/add.png",
