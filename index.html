@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#246347">
+  <meta name="theme-color" content="#f7f5ef">
   <meta name="description" content="口译日程、会后整理、统计与跨设备同步工具">
   <title>口译小助理</title>
   <link rel="manifest" href="./app.webmanifest">
@@ -12,143 +12,231 @@
   <script src="./pwa-register.js" defer></script>
   <style>
     :root {
-      --page: #f4f6f2;
-      --surface: #fbfcf9;
-      --ink: #19211c;
-      --muted: #68736b;
-      --line: #dbe1da;
-      --accent: #246347;
-      --orange: #f2762e;
+      --page: #f7f5ef;
+      --surface: #fffdf8;
+      --ink: #1d2a22;
+      --muted: #69736c;
+      --line: #dfe3dc;
+      --green: #205f43;
+      --green-deep: #184a35;
+      --green-soft: #e7f0e8;
+      --orange: #ef7440;
+      --orange-soft: #fff0e8;
       color-scheme: light;
     }
     * { box-sizing: border-box; }
-    html, body { min-height: 100%; }
+    html { min-height: 100%; background: var(--page); }
     body {
+      min-height: 100%;
       margin: 0;
-      background: var(--page);
+      background:
+        radial-gradient(circle at 88% 8%, rgba(239, 116, 64, .09), transparent 24rem),
+        var(--page);
       color: var(--ink);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     }
-    .launch-page {
+    a { color: inherit; }
+    .site-shell {
+      width: min(1180px, calc(100% - 64px));
       min-height: 100dvh;
-      display: grid;
-      place-items: center;
-      padding: 32px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
     }
-    .launch-card {
-      width: min(1120px, 100%);
-      min-height: min(680px, calc(100dvh - 64px));
-      display: grid;
-      grid-template-columns: minmax(0, 1.02fr) minmax(360px, .98fr);
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      background: var(--surface);
-      box-shadow: 0 26px 80px rgba(35, 58, 44, .12);
+    .site-header {
+      min-height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
     }
-    .launch-copy { align-self: center; padding: clamp(40px, 7vw, 88px); }
-    .product-label {
-      margin: 0 0 18px;
-      color: var(--accent);
-      font-size: 14px;
-      font-weight: 750;
-      letter-spacing: .08em;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(48px, 7vw, 82px);
-      line-height: 1;
-      letter-spacing: -.055em;
-    }
-    .intro {
-      max-width: 28rem;
-      margin: 26px 0 0;
-      color: var(--muted);
-      font-size: clamp(17px, 2vw, 20px);
-      line-height: 1.75;
-    }
-    .launch-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
-    .launch-actions a {
-      min-height: 48px;
+    .brand {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 0 22px;
-      border-radius: 999px;
-      color: inherit;
-      text-decoration: none;
-      font-weight: 750;
-      transition: transform 140ms ease, box-shadow 140ms ease;
+      gap: 11px;
+      font-size: 16px;
+      font-weight: 760;
+      letter-spacing: -.01em;
     }
-    .launch-actions a:hover { transform: translateY(-1px); }
-    .launch-actions a:active { transform: scale(.98); }
-    .launch-actions a:focus-visible { outline: 3px solid rgba(36, 99, 71, .28); outline-offset: 3px; }
-    .primary-action {
-      background: var(--accent);
-      color: #f8fcf9 !important;
-      box-shadow: 0 12px 28px rgba(36, 99, 71, .2);
-    }
-    .secondary-action { border: 1px solid var(--line); background: #fff; }
-    .feature-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 20px;
-      margin: 34px 0 0;
-      padding: 0;
-      list-style: none;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .feature-list li::before {
-      content: "";
-      width: 7px;
-      height: 7px;
-      display: inline-block;
-      margin: 0 8px 1px 0;
-      border-radius: 50%;
-      background: var(--orange);
-    }
-    .install-note { max-width: 30rem; margin: 20px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
-    .launch-art {
-      position: relative;
-      min-height: 100%;
+    .brand-mark {
+      width: 30px;
+      height: 30px;
       display: grid;
       place-items: center;
-      overflow: hidden;
-      background: linear-gradient(145deg, #eef4ee, #fff5ec);
+      border-radius: 9px;
+      background: var(--green);
+      color: #fff;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      line-height: 1;
     }
-    .art-backdrop {
-      position: absolute;
-      width: 78%;
-      aspect-ratio: 1;
-      border-radius: 46% 54% 58% 42%;
-      background: rgba(255, 255, 255, .72);
-      transform: rotate(-8deg);
+    .header-note { color: var(--muted); font-size: 13px; }
+    .hero {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+      align-items: center;
+      gap: clamp(40px, 7vw, 96px);
+      padding: clamp(56px, 8vh, 92px) 0;
     }
-    .launch-art img {
+    .eyebrow {
+      width: fit-content;
+      margin: 0 0 20px;
+      padding: 7px 11px;
+      border-radius: 7px;
+      background: var(--green-soft);
+      color: var(--green-deep);
+      font-size: 13px;
+      font-weight: 760;
+      letter-spacing: .06em;
+    }
+    h1 {
+      max-width: 650px;
+      margin: 0;
+      font-size: clamp(46px, 6vw, 74px);
+      line-height: 1.08;
+      letter-spacing: -.055em;
+      text-wrap: balance;
+    }
+    .headline-accent { color: var(--orange); }
+    .intro {
+      max-width: 34rem;
+      margin: 24px 0 0;
+      color: var(--muted);
+      font-size: clamp(17px, 1.7vw, 19px);
+      line-height: 1.75;
+    }
+    .launch-actions {
+      max-width: 590px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 34px;
+    }
+    .launch-action {
+      min-height: 88px;
       position: relative;
-      z-index: 1;
-      width: min(88%, 560px);
-      height: auto;
-      filter: drop-shadow(0 24px 36px rgba(130, 85, 52, .12));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 16px 48px 16px 19px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 253, 248, .72);
+      text-decoration: none;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
     }
-    @media (max-width: 780px) {
-      .launch-page { padding: 0; place-items: stretch; }
-      .launch-card {
-        min-height: 100dvh;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto minmax(270px, 42vh);
-        border: 0;
-        border-radius: 0;
-        box-shadow: none;
+    .launch-action::after {
+      content: "→";
+      position: absolute;
+      right: 19px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 22px;
+    }
+    .launch-action:hover { transform: translateY(-2px); border-color: #b7c4ba; background: var(--surface); }
+    .launch-action:active { transform: translateY(0); }
+    .launch-action:focus-visible { outline: 3px solid rgba(32, 95, 67, .25); outline-offset: 3px; }
+    .primary-action { border-color: var(--green); background: var(--green); color: #fff; }
+    .primary-action:hover { border-color: var(--green-deep); background: var(--green-deep); }
+    .action-title { font-size: 16px; font-weight: 780; }
+    .action-detail { margin-top: 5px; font-size: 12px; opacity: .72; }
+    .feature-line {
+      max-width: 590px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 30px 0 0;
+      padding: 17px 0 0;
+      border-top: 1px solid var(--line);
+      list-style: none;
+    }
+    .feature-line li { color: var(--muted); font-size: 13px; }
+    .feature-line strong { display: block; margin-bottom: 4px; color: var(--ink); font-size: 14px; }
+    .hero-visual {
+      position: relative;
+      min-height: 510px;
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+    }
+    .hero-visual::before {
+      content: "";
+      position: absolute;
+      inset: 5% -4% 3% 7%;
+      z-index: -1;
+      border: 1px solid rgba(239, 116, 64, .17);
+      border-radius: 44% 56% 45% 55% / 52% 39% 61% 48%;
+      background: linear-gradient(145deg, var(--orange-soft), rgba(231, 240, 232, .78));
+      transform: rotate(3deg);
+    }
+    .hero-visual img {
+      width: min(100%, 530px);
+      height: auto;
+      filter: drop-shadow(0 25px 30px rgba(102, 69, 42, .13));
+    }
+    .install-note {
+      position: absolute;
+      right: -10px;
+      bottom: 22px;
+      width: min(250px, 62%);
+      margin: 0;
+      padding: 15px 17px;
+      border: 1px solid rgba(32, 95, 67, .16);
+      border-radius: 12px;
+      background: rgba(255, 253, 248, .92);
+      box-shadow: 0 16px 38px rgba(44, 67, 52, .1);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      backdrop-filter: blur(8px);
+    }
+    .install-note strong { display: block; margin-bottom: 3px; color: var(--green-deep); font-size: 13px; }
+    @media (max-width: 860px) {
+      .site-shell { width: min(100% - 40px, 680px); }
+      .site-header { min-height: 68px; }
+      .header-note { display: none; }
+      .hero { grid-template-columns: 1fr; gap: 16px; padding: 44px 0 36px; }
+      .hero-visual { min-height: 330px; grid-row: 1; }
+      .hero-visual::before { inset: 2% 5% 5%; }
+      .hero-visual img { width: min(78vw, 390px); }
+      .install-note { right: 0; bottom: 4px; }
+      .hero-copy { grid-row: 2; }
+      h1 { max-width: 590px; }
+    }
+    @media (max-width: 560px) {
+      .site-shell { width: calc(100% - 32px); }
+      .hero { align-items: start; padding-top: 28px; }
+      .hero-visual { min-height: 250px; }
+      .hero-visual img { width: min(72vw, 300px); }
+      .install-note { width: 190px; padding: 11px 13px; font-size: 11px; }
+      .eyebrow { margin-bottom: 15px; }
+      h1 { font-size: clamp(39px, 12vw, 52px); }
+      .intro { margin-top: 18px; font-size: 16px; line-height: 1.7; }
+      .launch-actions { grid-template-columns: 1fr; margin-top: 26px; }
+      .launch-action { min-height: 72px; }
+      .feature-line { margin-top: 24px; padding-top: 15px; }
+      .feature-line li { font-size: 11px; }
+      .feature-line strong { font-size: 13px; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #17211b;
+        --surface: #202c24;
+        --ink: #f2f3ed;
+        --muted: #aeb9b1;
+        --line: #38453c;
+        --green: #65a983;
+        --green-deep: #d0edda;
+        --green-soft: #293e31;
+        --orange: #ff9162;
+        --orange-soft: #412c24;
+        color-scheme: dark;
       }
-      .launch-copy { padding: 48px 24px 34px; }
-      h1 { font-size: clamp(46px, 15vw, 68px); }
-      .intro { font-size: 17px; }
-      .launch-actions { display: grid; }
-      .launch-actions a { width: 100%; }
-      .launch-art { grid-row: 2; }
-      .launch-art img { width: min(82%, 410px); }
+      body { background: radial-gradient(circle at 88% 8%, rgba(239, 116, 64, .1), transparent 24rem), var(--page); }
+      .primary-action { background: #438565; border-color: #438565; }
+      .primary-action:hover { background: #4e9673; border-color: #4e9673; }
+      .install-note { background: rgba(32, 44, 36, .93); }
+      .hero-visual img { filter: drop-shadow(0 25px 30px rgba(0, 0, 0, .2)); }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
@@ -156,26 +244,35 @@
   </style>
 </head>
 <body>
-  <main class="launch-page">
-    <section class="launch-card" aria-labelledby="page-title">
-      <div class="launch-copy">
-        <p class="product-label">口译工作与日程管理</p>
-        <h1 id="page-title">口译小助理</h1>
+  <main class="site-shell">
+    <header class="site-header">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">译</span><span>口译小助理</span></div>
+      <span class="header-note">为口译工作者设计</span>
+    </header>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">口译工作与日程管理</p>
+        <h1 id="page-title">日程随手记，<br>工作<span class="headline-accent">回到一处</span>。</h1>
         <p class="intro">在手机上快速记录，在电脑上整理统计。登录后，两端使用同一份数据。</p>
         <nav class="launch-actions" aria-label="选择使用方式">
-          <a class="primary-action" href="./mobile-schedule.html">打开手机版</a>
-          <a class="secondary-action" href="./interpreter-schedule.html">打开桌面版</a>
+          <a class="launch-action primary-action" href="./mobile-schedule.html">
+            <span class="action-title">打开手机版</span>
+            <span class="action-detail">随时记录与查看日程</span>
+          </a>
+          <a class="launch-action" href="./interpreter-schedule.html">
+            <span class="action-title">打开桌面版</span>
+            <span class="action-detail">集中整理与统计工作</span>
+          </a>
         </nav>
-        <ul class="feature-list" aria-label="主要能力">
-          <li>手机安装</li>
-          <li>桌面整理</li>
-          <li>云端同步</li>
+        <ul class="feature-line" aria-label="主要能力">
+          <li><strong>记录</strong>快速添加日程</li>
+          <li><strong>整理</strong>归档口译资料</li>
+          <li><strong>同步</strong>跨设备接着用</li>
         </ul>
-        <p class="install-note">在华为手机的 Edge 中打开本站后，可从浏览器菜单添加到主屏幕。</p>
       </div>
-      <div class="launch-art" aria-hidden="true">
-        <div class="art-backdrop"></div>
-        <img src="./assets/illustrations/home-calendar-sun.png" alt="" width="1024" height="1024">
+      <div class="hero-visual">
+        <img src="./assets/illustrations/home-calendar-sun.png" alt="微笑的太阳和日历插画" width="1024" height="1024">
+        <p class="install-note"><strong>像 App 一样使用</strong>华为手机用 Edge 打开后，可从浏览器菜单添加到主屏幕。</p>
       </div>
     </section>
   </main>
