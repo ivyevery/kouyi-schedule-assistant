@@ -1276,14 +1276,13 @@
         </div>
       </div>
       <div class="agenda-head">
-        <h2 class="agenda-date">全部日程</h2>
+        <h2 class="agenda-date" id="agendaDate">预定与确认</h2>
         <span class="agenda-count" id="allCount"></span>
       </div>
       <div class="list-tools" id="filterBar">
-        <button class="filter-button active" type="button" data-filter="all">全部</button>
+        <button class="filter-button active" type="button" data-filter="all">预定＋确认</button>
         <button class="filter-button" type="button" data-filter="reserved">预定</button>
         <button class="filter-button" type="button" data-filter="confirmed">确认</button>
-        <button class="filter-button" type="button" data-filter="completed">完成</button>
       </div>
       <div class="agenda-list" id="allList"></div>
     </section>
@@ -1489,6 +1488,7 @@
     let selectedDate = todayKey();
     let viewDate = dateFromKey(selectedDate);
     let currentFilter = "all";
+    let calendarAgendaDate = null;
     let currentView = "homeView";
     let homeSelectedDate = null;
     let homePopoverPinned = false;
@@ -1651,19 +1651,18 @@
         const date = new Date(start);
         date.setDate(start.getDate() + i);
         const key = keyFromDate(date);
-        const records = visibleRecords().filter(record => record.status !== "cancelled" && occursOn(record, key));
+        const records = visibleRecords().filter(record => ["reserved", "confirmed"].includes(record.status) && occursOn(record, key));
         const blockers = visibleBlockers().filter(record => occursOn(record, key));
         const classes = ["day"];
         const statuses = new Set(records.map(record => record.status));
         if (statuses.has("confirmed")) classes.push("has-confirmed");
         else if (statuses.has("reserved")) classes.push("has-reserved");
-        else if (statuses.has("completed")) classes.push("has-completed");
         if (blockers.length) classes.push("has-blocker");
         if (blockers.length && !records.length) classes.push("blocker-only");
         if (date.getMonth() !== viewDate.getMonth()) classes.push("outside");
         if (key === todayKey()) classes.push("today");
         if (key === selectedDate) classes.push("selected");
-        const description = [records.length ? `${records.length}场会议` : "", blockers.length ? `${blockers.length}项占用` : ""].filter(Boolean).join("，");
+        const description = [records.length ? `${records.length}场档期日程` : "", blockers.length ? `${blockers.length}项占用` : ""].filter(Boolean).join("，");
         pieces.push(`<button class="${classes.join(" ")}" type="button" data-date="${key}" aria-label="${key}${description ? `，${description}` : ""}"><span class="day-number">${date.getDate()}</span></button>`);
       }
       $("calendar").innerHTML = pieces.join("");
@@ -1754,17 +1753,31 @@
       $("upcomingList").innerHTML = pieces.join("");
     }
     function renderAllList() {
-      let records = visibleRecords();
+      let records = visibleRecords().filter(record => ["reserved", "confirmed"].includes(record.status));
+      let blockers = [];
+      if (calendarAgendaDate) {
+        records = records.filter(record => occursOn(record, calendarAgendaDate));
+        blockers = visibleBlockers().filter(record => occursOn(record, calendarAgendaDate)).sort(compareRecords);
+        $("agendaDate").textContent = formatSelectedDate(calendarAgendaDate).replace("今天，", "");
+      } else {
+        $("agendaDate").textContent = "预定与确认";
+      }
       if (currentFilter !== "all") records = records.filter(record => record.status === currentFilter);
-      records = currentFilter === "completed" ? records.sort((a, b) => compareRecords(b, a)) : records.sort(compareRecords);
-      const blockers = currentFilter === "all" ? visibleBlockers().sort(compareRecords) : [];
+      records = records.sort(compareRecords);
+      if (currentFilter !== "all") blockers = [];
       const entries = [
-        ...records.map(record => ({ record, html: meetingCard(record, true) })),
+        ...records.map(record => ({ record, html: meetingCard(record, !calendarAgendaDate) })),
         ...blockers.map(record => ({ record, html: blockerCard(record) }))
       ].sort((a, b) => compareRecords(a.record, b.record));
-      $("allCount").textContent = `${entries.length} 条`;
-      $("allList").innerHTML = entries.length ? entries.map(entry => entry.html).join("") : emptyState("这里还没有记录", "新增日程或标记占用后会显示在这里");
+      $("allCount").textContent = entries.length ? `${entries.length} 条` : "无日程";
+      const emptyTitle = calendarAgendaDate ? "当天无日程" : "暂无预定或确认日程";
+      const emptyBody = calendarAgendaDate ? "这一天目前没有预定、确认或占用安排" : "新的预定或确认日程会显示在这里";
+      $("allList").innerHTML = entries.length ? entries.map(entry => entry.html).join("") : emptyState(emptyTitle, emptyBody);
       $("localSummary").textContent = `当前有 ${visibleRecords().length} 条日程。每次修改都会立即保存，并保留最近 30 份本机备份。`;
+    }
+    function resetCalendarFilter() {
+      currentFilter = "all";
+      document.querySelectorAll("#filterBar .filter-button").forEach(button => button.classList.toggle("active", button.dataset.filter === "all"));
     }
     function render() { renderHeader(); renderWeekStrip(); renderSelectedDay(); renderUpcoming(); renderCalendar(); renderAllList(); }
 
@@ -2107,8 +2120,11 @@
         return;
       }
       selectedDate = day.dataset.date;
+      calendarAgendaDate = selectedDate;
+      resetCalendarFilter();
       viewDate = dateFromKey(selectedDate);
       renderCalendar();
+      renderAllList();
     });
     $("calendar").addEventListener("pointerdown", event => {
       const day = event.target.closest("[data-date]");
@@ -2118,8 +2134,11 @@
       calendarLongPressTimer = setTimeout(() => {
         calendarLongPressTriggered = true;
         selectedDate = day.dataset.date;
+        calendarAgendaDate = selectedDate;
+        resetCalendarFilter();
         viewDate = dateFromKey(selectedDate);
         renderCalendar();
+        renderAllList();
         openBlocker(selectedDate);
       }, 560);
     });
@@ -2192,9 +2211,9 @@
       const editBlocker = event.target.closest("[data-edit-blocker]");
       if (editBlocker) openBlocker(selectedDate, state.records.find(record => record.id === editBlocker.dataset.editBlocker));
     });
-    $("prevMonthBtn").addEventListener("click", () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1); renderCalendar(); });
-    $("nextMonthBtn").addEventListener("click", () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); renderCalendar(); });
-    $("todayBtn").addEventListener("click", () => { selectedDate = todayKey(); viewDate = dateFromKey(selectedDate); render(); });
+    $("prevMonthBtn").addEventListener("click", () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1); calendarAgendaDate = null; renderCalendar(); renderAllList(); });
+    $("nextMonthBtn").addEventListener("click", () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); calendarAgendaDate = null; renderCalendar(); renderAllList(); });
+    $("todayBtn").addEventListener("click", () => { selectedDate = todayKey(); calendarAgendaDate = selectedDate; resetCalendarFilter(); viewDate = dateFromKey(selectedDate); render(); });
     $("addBlockerBtn").addEventListener("click", () => openBlocker(selectedDate));
     $("closeBlockerBtn").addEventListener("click", closeBlocker);
     $("blockerForm").addEventListener("submit", saveBlocker);
