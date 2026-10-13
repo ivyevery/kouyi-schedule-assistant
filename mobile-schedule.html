@@ -2003,7 +2003,7 @@
       cloudSyncStatus = "正在比较本机与云端数据……";
       renderCloudAuth();
       try {
-        const result = await window.XiaorichangCloudSync.sync({
+        const syncOptions = {
           client: supabaseClient,
           userId: cloudUser.id,
           scope: "mobile",
@@ -2017,9 +2017,19 @@
             viewDate = dateFromKey(selectedDate);
             render();
           }
-        });
+        };
+        let result = await window.XiaorichangCloudSync.sync(syncOptions);
+        if (result.status === "conflict") {
+          const useMobile = window.confirm(
+            "手机版和云端都有修改。\n\n是否以当前手机版为准？\n\n确认后会先备份云端旧版本，再把手机版日程上传到云端。"
+          );
+          if (useMobile) {
+            result = await window.XiaorichangCloudSync.sync({ ...syncOptions, conflictStrategy: "local" });
+          }
+        }
         const count = state.records.length;
-        if (result.status === "uploaded") cloudSyncStatus = `已上传 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
+        if (result.status === "uploaded" && result.resolution === "local") cloudSyncStatus = `已备份云端旧版本，并以手机版更新云端 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else if (result.status === "uploaded") cloudSyncStatus = `已上传 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
         else if (result.status === "downloaded") cloudSyncStatus = `已下载 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
         else if (result.status === "current") cloudSyncStatus = `已是最新状态 · ${formatCloudSyncTime(result.updatedAt)}`;
         else cloudSyncStatus = "检测到本机和云端都有修改，已暂停同步，未覆盖任何数据。";

@@ -99,7 +99,8 @@
       localState,
       normalizeRemote,
       backupLocal,
-      replaceLocal
+      replaceLocal,
+      conflictStrategy = "pause"
     } = options;
     const normalizedLocal = toSharedState(normalizeRemote(localState));
     const localFingerprint = fingerprint(normalizedLocal);
@@ -124,6 +125,29 @@
     const normalizedRemote = toSharedState(normalizeRemote(remote.payload));
     const remoteFingerprint = fingerprint(normalizedRemote);
     const meta = readMeta(userId, scope);
+
+    async function uploadLocalOverRemote() {
+      // Keep a recoverable copy of the cloud version in this browser before
+      // the user explicitly replaces it with the current device's version.
+      if (typeof backupLocal === "function") backupLocal(normalizedRemote);
+      const { data: updated, error: updateError } = await client
+        .from("app_state")
+        .update({ payload: normalizedLocal })
+        .eq("user_id", userId)
+        .eq("revision", remote.revision)
+        .select("revision, updated_at")
+        .maybeSingle();
+      if (updateError) throw updateError;
+      if (!updated) return { status: "conflict", revision: remote.revision, updatedAt: remote.updated_at };
+      const uploadedMeta = writeMeta(userId, scope, updated.revision, localFingerprint);
+      return {
+        status: "uploaded",
+        resolution: "local",
+        revision: updated.revision,
+        updatedAt: updated.updated_at,
+        meta: uploadedMeta
+      };
+    }
 
     if (!meta) {
       const localCount = normalizedLocal.records.length;
@@ -153,6 +177,7 @@
       }
 
       if (localFingerprint !== remoteFingerprint) {
+        if (conflictStrategy === "local") return uploadLocalOverRemote();
         return { status: "conflict", revision: remote.revision, updatedAt: remote.updated_at };
       }
       const initializedMeta = writeMeta(userId, scope, remote.revision, remoteFingerprint);
@@ -192,6 +217,7 @@
       return { status: "uploaded", revision: updated.revision, updatedAt: updated.updated_at, meta: uploadedMeta };
     }
 
+    if (conflictStrategy === "local") return uploadLocalOverRemote();
     return { status: "conflict", revision: remote.revision, updatedAt: remote.updated_at };
   }
 
