@@ -1969,7 +1969,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="cloud-sync.js"></script>
+  <script src="cloud-sync.js?v=6"></script>
   <script>
     const STORAGE_KEY = "ivy-interpreter-schedule-v1";
     const BACKUP_KEY = "ivy-interpreter-schedule-backups-v1";
@@ -3790,7 +3790,7 @@
       cloudSyncStatus = "正在比较本机与云端数据……";
       renderCloudAuth();
       try {
-        const result = await window.XiaorichangCloudSync.sync({
+        const syncOptions = {
           client: supabaseClient,
           userId: cloudUser.id,
           scope: "desktop",
@@ -3803,9 +3803,19 @@
             resetForm();
             renderAll();
           }
-        });
+        };
+        let result = await window.XiaorichangCloudSync.sync(syncOptions);
+        if (result.status === "conflict") {
+          const useCloud = window.confirm(
+            "桌面版和云端都有修改。\n\n是否以手机版刚上传的云端版本为准？\n\n确认后会先备份当前桌面版，再下载云端日程。"
+          );
+          if (useCloud) {
+            result = await window.XiaorichangCloudSync.sync({ ...syncOptions, conflictStrategy: "remote" });
+          }
+        }
         const count = state.records.length;
         if (result.status === "uploaded") cloudSyncStatus = `已上传 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
+        else if (result.status === "downloaded" && result.resolution === "remote") cloudSyncStatus = `已备份桌面旧版本，并采用手机版云端数据 · ${formatCloudSyncTime(result.updatedAt)}`;
         else if (result.status === "downloaded") cloudSyncStatus = `已下载 ${count} 条记录 · ${formatCloudSyncTime(result.updatedAt)}`;
         else if (result.status === "current") cloudSyncStatus = `已是最新状态 · ${formatCloudSyncTime(result.updatedAt)}`;
         else cloudSyncStatus = "检测到本机和云端都有修改，已暂停同步，未覆盖任何数据。";

@@ -1,11 +1,11 @@
-const CACHE_NAME = "interpreter-assistant-v5";
+const CACHE_NAME = "interpreter-assistant-v6";
 const APP_SHELL = [
   "./",
   "./mobile-schedule.html",
   "./interpreter-schedule.html",
   "./app.webmanifest",
   "./pwa-register.js",
-  "./cloud-sync.js?v=5",
+  "./cloud-sync.js?v=6",
   "./supabase-config.js",
   "./assets/pwa/icon-192.png",
   "./assets/pwa/icon-512.png",

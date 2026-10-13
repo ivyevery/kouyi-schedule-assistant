@@ -149,6 +149,21 @@
       };
     }
 
+    function downloadRemoteOverLocal() {
+      // Preserve the current device's version before the user explicitly
+      // replaces it with the cloud version.
+      if (typeof backupLocal === "function") backupLocal(localState);
+      replaceLocal(normalizedRemote);
+      const downloadedMeta = writeMeta(userId, scope, remote.revision, remoteFingerprint);
+      return {
+        status: "downloaded",
+        resolution: "remote",
+        revision: remote.revision,
+        updatedAt: remote.updated_at,
+        meta: downloadedMeta
+      };
+    }
+
     if (!meta) {
       const localCount = normalizedLocal.records.length;
       const remoteCount = normalizedRemote.records.length;
@@ -178,6 +193,7 @@
 
       if (localFingerprint !== remoteFingerprint) {
         if (conflictStrategy === "local") return uploadLocalOverRemote();
+        if (conflictStrategy === "remote") return downloadRemoteOverLocal();
         return { status: "conflict", revision: remote.revision, updatedAt: remote.updated_at };
       }
       const initializedMeta = writeMeta(userId, scope, remote.revision, remoteFingerprint);
@@ -218,6 +234,7 @@
     }
 
     if (conflictStrategy === "local") return uploadLocalOverRemote();
+    if (conflictStrategy === "remote") return downloadRemoteOverLocal();
     return { status: "conflict", revision: remote.revision, updatedAt: remote.updated_at };
   }
 
